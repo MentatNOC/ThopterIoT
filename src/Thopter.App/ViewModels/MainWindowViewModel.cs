@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
@@ -43,6 +46,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private NetworkInterfaceInfo? _selectedInterface;
 
+    /// <summary>Optional manual CIDR override (e.g. "10.10.10.0/24"). When set, overrides the interface pick.</summary>
+    [ObservableProperty]
+    private string _manualCidr = "";
+
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ScanCommand))]
     [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
@@ -57,46 +64,62 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isProgressIndeterminate;
 
+    /// <summary>The device whose detail flyout is open, or null when closed.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsDetailOpen))]
+    private DeviceDetail? _selectedDetail;
+
+    public bool IsDetailOpen => SelectedDetail is not null;
+
+    /// <summary>True once at least one device has been found — gates the Export button.</summary>
+    public bool HasResults => Devices.Count > 0;
+
+    public IReadOnlyList<DiscoveredDevice> DevicesForExport => Devices.Select(r => r.Device).ToList();
+
     public MainWindowViewModel()
     {
         foreach (var nic in NetInfo.GetActiveIPv4Interfaces())
             Interfaces.Add(nic);
 
         SelectedInterface = NetInfo.GetPrimaryInterface() ?? Interfaces.FirstOrDefault();
+
+        Devices.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasResults));
     }
 
     [RelayCommand(CanExecute = nameof(CanScan))]
     private async Task ScanAsync()
     {
-        var nic = SelectedInterface;
-        if (nic is null)
+        if (!TryBuildOptions(out var options, out var scanLabel, out var error))
         {
-            StatusText = "No network interface selected.";
+            StatusText = error!;
             return;
         }
 
+        SelectedDetail = null;
         Devices.Clear();
         IsScanning = true;
         IsProgressIndeterminate = true;
-        StatusText = $"Scanning {nic.Name} ({nic.HostAddress}/{nic.PrefixLength})...";
+        StatusText = $"Scanning {scanLabel}...";
 
         _scanCts = new CancellationTokenSource();
-
-        var options = new DiscoveryOptions { Interface = nic };
 
         // DiscoveredDevice is mutated in place by the engine; marshal each report to the UI
         // thread rather than touching the collection from the scan's background thread.
         var progress = new Progress<DiscoveredDevice>(device =>
-            Dispatcher.UIThread.Post(() => AddOrUpdateRow(device)));
+            Dispatcher.UIThread.Post(() =>
+            {
+                AddOrUpdateRow(device);
+                StatusText = $"Scanning {scanLabel}... {Devices.Count} device(s) found";
+            }));
 
         try
         {
             var results = await _engine.ScanAsync(options, progress, _scanCts.Token).ConfigureAwait(true);
-            StatusText = $"Done. {results.Count} device(s) found.";
+            StatusText = $"Done. {results.Count} device(s) found on {scanLabel}.";
         }
         catch (OperationCanceledException)
         {
-            StatusText = "Scan cancelled.";
+            StatusText = $"Scan cancelled. {Devices.Count} device(s) found before stopping.";
         }
         catch (Exception ex)
         {
@@ -119,12 +142,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private bool CanCancel() => IsScanning;
 
     [RelayCommand]
-    private void Export()
-    {
-        // Stub for this scaffold: CSV/JSON export via StorageProvider.SaveFilePickerAsync
-        // is a later step.
-        StatusText = "Export is not implemented yet.";
-    }
+    private void CloseDetail() => SelectedDetail = null;
+
+    /// <summary>Open the detail flyout for a row (called from the view on double-click).</summary>
+    public void ShowDetail(DeviceRow row) => SelectedDetail = new DeviceDetail(row.Device);
 
     [RelayCommand]
     private void Upgrade()
@@ -132,6 +153,72 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         // Inert CTA: just opens the marketing page. No connector, no license flow, no
         // cloud call in this project — that logic lives only in the private connector repo.
         Process.Start(new ProcessStartInfo { FileName = UpgradeUrl, UseShellExecute = true });
+    }
+
+    /// <summary>
+    /// Build scan options from the UI: a validated manual CIDR takes precedence, else the
+    /// selected interface. A manual CIDR must resolve to a private/link-local range — the
+    /// open tool never scans public address space.
+    /// </summary>
+    private bool TryBuildOptions(out DiscoveryOptions options, out string label, out string? error)
+    {
+        options = new DiscoveryOptions();
+        label = "";
+        error = null;
+
+        if (!string.IsNullOrWhiteSpace(ManualCidr))
+        {
+            if (!TryValidateCidr(ManualCidr, out var cidr, out error))
+                return false;
+
+            options = new DiscoveryOptions { Cidrs = new[] { cidr } };
+            label = cidr;
+            return true;
+        }
+
+        var nic = SelectedInterface;
+        if (nic is null)
+        {
+            error = "Select a network interface, or enter a CIDR to scan.";
+            return false;
+        }
+
+        options = new DiscoveryOptions { Interface = nic };
+        label = $"{nic.Name} ({nic.HostAddress}/{nic.PrefixLength})";
+        return true;
+    }
+
+    private static bool TryValidateCidr(string input, out string canonical, out string? error)
+    {
+        canonical = "";
+        error = null;
+
+        input = input.Trim();
+        int slash = input.IndexOf('/');
+        string ipPart = slash < 0 ? input : input[..slash];
+
+        if (!IPAddress.TryParse(ipPart.Trim(), out var addr) || addr.AddressFamily != AddressFamily.InterNetwork)
+        {
+            error = "Enter a valid IPv4 CIDR, e.g. 10.10.10.0/24.";
+            return false;
+        }
+
+        int prefix = 24;
+        if (slash >= 0 && (!int.TryParse(input.AsSpan(slash + 1), out prefix) || prefix is < 0 or > 32))
+        {
+            error = "Invalid prefix length — use 0 to 32.";
+            return false;
+        }
+
+        var network = NetInfo.NetworkAddressOf(addr, prefix);
+        if (!NetInfo.IsLanScannable(network))
+        {
+            error = "Only private / link-local ranges can be scanned (RFC1918, 169.254/16).";
+            return false;
+        }
+
+        canonical = $"{network}/{prefix}";
+        return true;
     }
 
     private void AddOrUpdateRow(DiscoveredDevice device)

@@ -18,8 +18,12 @@ public sealed class ScanResultDevice
     public string Type { get; set; } = "";
     public string? Model { get; set; }
     public string? Hostname { get; set; }
+    public bool LocallyAdministeredMac { get; set; }
     public string Sources { get; set; } = "";
     public List<int> Ports { get; set; } = new();
+    public List<string> OnvifScopes { get; set; } = new();
+    public List<string> MdnsServices { get; set; } = new();
+    public Dictionary<string, string> Attributes { get; set; } = new();
     public string? Note { get; set; }
 
     public static ScanResultDevice FromDevice(DiscoveredDevice device) => new()
@@ -30,8 +34,12 @@ public sealed class ScanResultDevice
         Type = device.Type.ToString(),
         Model = device.Model,
         Hostname = device.Hostname,
+        LocallyAdministeredMac = device.IsLocallyAdministered,
         Sources = device.Sources.ToString(),
         Ports = device.OpenPorts.Select(p => p.Port).ToList(),
+        OnvifScopes = device.OnvifScopes.ToList(),
+        MdnsServices = device.MdnsServices.ToList(),
+        Attributes = device.Attributes.ToDictionary(kv => kv.Key, kv => kv.Value),
         Note = device.Note,
     };
 }
@@ -40,8 +48,9 @@ public sealed class ScanResultDevice
 /// Source-generated serialization context for the headless scan output. Required for
 /// NativeAOT — reflection-based <c>JsonSerializer</c> is not used anywhere in this app.
 /// </summary>
-[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSourceGenerationOptions(WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(List<ScanResultDevice>))]
+[JsonSerializable(typeof(Dictionary<string, string>))]
 public partial class ScanJsonContext : JsonSerializerContext
 {
 }

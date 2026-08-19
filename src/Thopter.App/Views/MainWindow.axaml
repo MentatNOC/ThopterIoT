@@ -1,80 +1,285 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Thopter.App.ViewModels"
+        xmlns:sys="using:System"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         x:Class="Thopter.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         x:CompileBindings="True"
-        d:DesignWidth="920" d:DesignHeight="640"
-        Width="920" Height="640"
+        d:DesignWidth="980" d:DesignHeight="680"
+        Width="980" Height="680"
         Title="ThopterIoT">
 
     <Design.DataContext>
         <vm:MainWindowViewModel />
     </Design.DataContext>
 
-    <Grid RowDefinitions="Auto,*,Auto,Auto" Margin="12">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="DetailCardBrush" Color="#FFFFFF" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="DetailCardBrush" Color="#2B2B2B" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
 
-        <!-- Scan control bar -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
-            <TextBlock Text="Interface:" VerticalAlignment="Center" />
-            <ComboBox ItemsSource="{Binding Interfaces}"
-                      SelectedItem="{Binding SelectedInterface}"
-                      MinWidth="280" />
-            <Button Content="Scan" Command="{Binding ScanCommand}" />
-            <Button Content="Cancel" Command="{Binding CancelCommand}" />
-            <Button Content="Export" Command="{Binding ExportCommand}" />
-        </StackPanel>
+    <Window.Styles>
+        <!-- Discovered-via pills -->
+        <Style Selector="Border.badge">
+            <Setter Property="Background" Value="#22808080" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Padding" Value="5,1" />
+            <Setter Property="Margin" Value="0,0,4,2" />
+        </Style>
+        <Style Selector="Border.badge.accent">
+            <Setter Property="Background" Value="#3540A0F0" />
+        </Style>
+        <Style Selector="Border.badge TextBlock">
+            <Setter Property="FontSize" Value="11" />
+        </Style>
+        <Style Selector="Border.badge.accent TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
 
-        <!-- Device list: header row + ListBox sharing the same column grid -->
-        <Grid Grid.Row="1" RowDefinitions="Auto,*">
+        <!-- Row emphasis: dim unknown-vendor hosts; tint ONVIF-confirmed cameras -->
+        <Style Selector="Border.rowroot.unknown">
+            <Setter Property="Opacity" Value="0.55" />
+        </Style>
+        <Style Selector="Border.rowroot.onvif">
+            <Setter Property="Background" Value="#1840A0F0" />
+        </Style>
 
-            <Border Grid.Row="0" Background="#14808080" Padding="8,4">
-                <Grid ColumnDefinitions="130,150,180,90,150,*">
-                    <TextBlock Grid.Column="0" Text="IP" FontWeight="Bold" />
-                    <TextBlock Grid.Column="1" Text="MAC" FontWeight="Bold" />
-                    <TextBlock Grid.Column="2" Text="Vendor" FontWeight="Bold" />
-                    <TextBlock Grid.Column="3" Text="Type" FontWeight="Bold" />
-                    <TextBlock Grid.Column="4" Text="Discovered via" FontWeight="Bold" />
-                    <TextBlock Grid.Column="5" Text="Open ports" FontWeight="Bold" />
+        <!-- Stretch list rows so columns line up with the header -->
+        <Style Selector="ListBox#DeviceList ListBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+
+        <!-- Detail flyout key labels -->
+        <Style Selector="TextBlock.detailkey">
+            <Setter Property="Opacity" Value="0.7" />
+            <Setter Property="Margin" Value="0,0,12,2" />
+        </Style>
+        <Style Selector="TextBlock.detailval">
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,0,0,2" />
+        </Style>
+        <Style Selector="TextBlock.sectionhead">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,10,0,3" />
+        </Style>
+    </Window.Styles>
+
+    <!-- Root: main content with the detail flyout overlaid on top -->
+    <Grid>
+
+        <Grid RowDefinitions="Auto,*,Auto,Auto" Margin="12">
+
+            <!-- Scan control bar -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                <TextBlock Text="Interface:" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding Interfaces}"
+                          SelectedItem="{Binding SelectedInterface}"
+                          IsEnabled="{Binding !IsScanning}"
+                          MinWidth="300" />
+                <TextBlock Text="or CIDR:" VerticalAlignment="Center" />
+                <TextBox Text="{Binding ManualCidr}"
+                         Watermark="e.g. 10.10.10.0/24"
+                         IsEnabled="{Binding !IsScanning}"
+                         Width="150"
+                         VerticalAlignment="Center" />
+                <Button Content="Scan" Command="{Binding ScanCommand}" IsDefault="True" />
+                <Button Content="Cancel" Command="{Binding CancelCommand}" />
+                <Button x:Name="ExportButton" Content="Export…"
+                        Click="OnExportClick"
+                        IsEnabled="{Binding HasResults}" />
+            </StackPanel>
+
+            <!-- Device list: header row + ListBox sharing the same column grid -->
+            <Grid Grid.Row="1" RowDefinitions="Auto,*">
+
+                <Border Grid.Row="0" Background="#14808080" Padding="8,4">
+                    <Grid ColumnDefinitions="130,150,180,90,165,*">
+                        <TextBlock Grid.Column="0" Text="IP" FontWeight="Bold" />
+                        <TextBlock Grid.Column="1" Text="MAC" FontWeight="Bold" />
+                        <TextBlock Grid.Column="2" Text="Vendor" FontWeight="Bold" />
+                        <TextBlock Grid.Column="3" Text="Type" FontWeight="Bold" />
+                        <TextBlock Grid.Column="4" Text="Discovered via" FontWeight="Bold" />
+                        <TextBlock Grid.Column="5" Text="Open ports" FontWeight="Bold" />
+                    </Grid>
+                </Border>
+
+                <ListBox x:Name="DeviceList" Grid.Row="1"
+                         ItemsSource="{Binding Devices}"
+                         SelectionMode="Single"
+                         DoubleTapped="OnDeviceDoubleTapped">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:DeviceRow">
+                            <Border Classes="rowroot"
+                                    Classes.unknown="{Binding IsUnknownVendor}"
+                                    Classes.onvif="{Binding IsOnvifConfirmed}"
+                                    Padding="8,4">
+                                <Grid ColumnDefinitions="130,150,180,90,165,*">
+                                    <TextBlock Grid.Column="0" Text="{Binding Ip}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Mac}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Vendor}" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Grid.Column="3" Text="{Binding Type}" VerticalAlignment="Center" />
+                                    <ItemsControl Grid.Column="4" ItemsSource="{Binding SourceBadges}"
+                                                  VerticalAlignment="Center">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:SourceBadge">
+                                                <Border Classes="badge" Classes.accent="{Binding Accent}">
+                                                    <TextBlock Text="{Binding Text}" />
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Grid.Column="5" Text="{Binding Ports}" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+
+            <!-- Status bar -->
+            <StackPanel Grid.Row="2" Spacing="4" Margin="0,8,0,8">
+                <ProgressBar Minimum="0" Maximum="100"
+                             Value="{Binding ProgressValue}"
+                             IsIndeterminate="{Binding IsProgressIndeterminate}"
+                             Height="4" />
+                <TextBlock Text="{Binding StatusText}" />
+            </StackPanel>
+
+            <!-- Upgrade panel: visually separated, inert CTA -->
+            <Border Grid.Row="3" BorderBrush="#40808080" BorderThickness="1" CornerRadius="4" Padding="12">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock Text="Get reports + monitoring with MentatNOC" FontWeight="SemiBold" />
+                        <TextBlock Text="ThopterIoT scans locally and stores nothing. Upgrade to keep history, generate reports, and monitor your fleet."
+                                   Opacity="0.7" FontSize="12" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="Upgrade" Command="{Binding UpgradeCommand}"
+                            VerticalAlignment="Center" />
                 </Grid>
             </Border>
 
-            <ListBox Grid.Row="1" ItemsSource="{Binding Devices}" SelectionMode="Single">
-                <ListBox.ItemTemplate>
-                    <DataTemplate x:DataType="vm:DeviceRow">
-                        <Grid ColumnDefinitions="130,150,180,90,150,*">
-                            <TextBlock Grid.Column="0" Text="{Binding Ip}" />
-                            <TextBlock Grid.Column="1" Text="{Binding Mac}" />
-                            <TextBlock Grid.Column="2" Text="{Binding Vendor}" />
-                            <TextBlock Grid.Column="3" Text="{Binding Type}" />
-                            <TextBlock Grid.Column="4" Text="{Binding Sources}" />
-                            <TextBlock Grid.Column="5" Text="{Binding Ports}" TextTrimming="CharacterEllipsis" />
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
         </Grid>
 
-        <!-- Status bar -->
-        <StackPanel Grid.Row="2" Spacing="4" Margin="0,8,0,8">
-            <ProgressBar Minimum="0" Maximum="100"
-                         Value="{Binding ProgressValue}"
-                         IsIndeterminate="{Binding IsProgressIndeterminate}"
-                         Height="4" />
-            <TextBlock Text="{Binding StatusText}" />
-        </StackPanel>
+        <!-- Detail flyout overlay (double-click a row) -->
+        <Border IsVisible="{Binding IsDetailOpen}"
+                Background="#99000000">
+            <Border MaxWidth="620" MaxHeight="560"
+                    Margin="24"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Background="{DynamicResource DetailCardBrush}"
+                    BorderBrush="#40808080" BorderThickness="1"
+                    CornerRadius="8" Padding="18"
+                    BoxShadow="0 8 24 0 #66000000">
+                <Grid RowDefinitions="Auto,*">
 
-        <!-- Upgrade panel: visually separated, inert CTA -->
-        <Border Grid.Row="3" BorderBrush="Gray" BorderThickness="1" CornerRadius="4" Padding="12">
-            <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Grid.Column="0"
-                           Text="Get reports + monitoring with MentatNOC"
-                           VerticalAlignment="Center" />
-                <Button Grid.Column="1" Content="Upgrade" Command="{Binding UpgradeCommand}" />
-            </Grid>
+                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="{Binding SelectedDetail.Title}" FontSize="20" FontWeight="Bold" />
+                            <TextBlock Text="{Binding SelectedDetail.Subtitle}" Opacity="0.75" />
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="Close" Command="{Binding CloseDetailCommand}"
+                                VerticalAlignment="Top" />
+                    </Grid>
+
+                    <ScrollViewer Grid.Row="1" Margin="0,8,0,0">
+                        <StackPanel>
+                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Classes="detailkey" Text="MAC" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Classes="detailval" Text="{Binding SelectedDetail.Mac}" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Classes="detailkey" Text="MAC type" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Classes="detailval" Text="{Binding SelectedDetail.MacKind}" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Classes="detailkey" Text="Vendor" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Classes="detailval" Text="{Binding SelectedDetail.Vendor}" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Classes="detailkey" Text="Model" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Classes="detailval" Text="{Binding SelectedDetail.Model}" />
+                                <TextBlock Grid.Row="4" Grid.Column="0" Classes="detailkey" Text="Hostname" />
+                                <TextBlock Grid.Row="4" Grid.Column="1" Classes="detailval" Text="{Binding SelectedDetail.Hostname}" />
+                                <TextBlock Grid.Row="5" Grid.Column="0" Classes="detailkey" Text="Discovered via" />
+                                <TextBlock Grid.Row="5" Grid.Column="1" Classes="detailval" Text="{Binding SelectedDetail.Sources}" />
+                            </Grid>
+
+                            <TextBlock Classes="sectionhead" Text="Addresses"
+                                       IsVisible="{Binding SelectedDetail.HasAddresses}" />
+                            <ItemsControl ItemsSource="{Binding SelectedDetail.Addresses}"
+                                          IsVisible="{Binding SelectedDetail.HasAddresses}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="sys:String">
+                                        <TextBlock Text="{Binding}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Classes="sectionhead" Text="Open ports"
+                                       IsVisible="{Binding SelectedDetail.HasPorts}" />
+                            <ItemsControl ItemsSource="{Binding SelectedDetail.Ports}"
+                                          IsVisible="{Binding SelectedDetail.HasPorts}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="sys:String">
+                                        <TextBlock Text="{Binding}" TextWrapping="Wrap" FontFamily="Consolas,monospace" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Classes="sectionhead" Text="ONVIF scopes"
+                                       IsVisible="{Binding SelectedDetail.HasOnvifScopes}" />
+                            <ItemsControl ItemsSource="{Binding SelectedDetail.OnvifScopes}"
+                                          IsVisible="{Binding SelectedDetail.HasOnvifScopes}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="sys:String">
+                                        <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Classes="sectionhead" Text="mDNS services"
+                                       IsVisible="{Binding SelectedDetail.HasMdnsServices}" />
+                            <ItemsControl ItemsSource="{Binding SelectedDetail.MdnsServices}"
+                                          IsVisible="{Binding SelectedDetail.HasMdnsServices}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="sys:String">
+                                        <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Classes="sectionhead" Text="Attributes"
+                                       IsVisible="{Binding SelectedDetail.HasAttributes}" />
+                            <ItemsControl ItemsSource="{Binding SelectedDetail.Attributes}"
+                                          IsVisible="{Binding SelectedDetail.HasAttributes}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="sys:String">
+                                        <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Classes="sectionhead" Text="Note"
+                                       IsVisible="{Binding SelectedDetail.HasNote}" />
+                            <TextBlock Text="{Binding SelectedDetail.Note}" TextWrapping="Wrap"
+                                       IsVisible="{Binding SelectedDetail.HasNote}" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
         </Border>
 
     </Grid>

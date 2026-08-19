@@ -38,6 +38,15 @@ internal static partial class Interop
     internal static unsafe partial uint SendARP(uint DestIP, uint SrcIP, byte* pMacAddr, uint* PhyAddrLen);
 
     /// <summary>
+    /// Return the interface the OS would route a packet to <paramref name="dwDestAddr"/> out
+    /// of. This is a pure routing-table lookup that applies the full metric logic (route
+    /// metric + per-interface metric) — it opens no socket and sends nothing. Called with a
+    /// documentation address to resolve the true internet-facing (default-route) interface.
+    /// </summary>
+    [LibraryImport("iphlpapi.dll")]
+    internal static partial uint GetBestInterface(uint dwDestAddr, out uint pdwBestIfIndex);
+
+    /// <summary>
     /// MIB_IPNET_ROW2, explicit x64/arm64 layout. Only the fields Thopter reads are
     /// declared; Size=88 pins the full record stride so the pointer walk is correct.
     /// </summary>
