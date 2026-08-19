@@ -22,7 +22,9 @@ public static class DeviceIdentifier
     private static readonly string[] NetworkVendors =
     {
         "fortinet", "cisco", "meraki", "mikrotik", "netgear", "tp-link", "aruba",
-        "juniper", "ruckus", "palo alto", "zyxel", "d-link", "sonicwall", "extreme"
+        "juniper", "ruckus", "palo alto", "zyxel", "d-link", "sonicwall", "extreme",
+        // residential gateways / cable modems / routers
+        "arris", "commscope", "technicolor", "arcadyan", "sagemcom", "actiontec", "pace plc"
     };
 
     private static readonly string[] CameraHttpHints =

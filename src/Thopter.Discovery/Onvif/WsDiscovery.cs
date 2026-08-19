@@ -38,7 +38,9 @@ public sealed class WsDiscovery
             catch { /* malformed SOAP — keep whatever we already extracted */ }
         }
 
-        return byIp.Values.ToList();
+        // Only surface genuine ONVIF responders. WSD printers/scanners also answer on 3702;
+        // they get dropped here and are still found via mDNS/ARP/port scan.
+        return byIp.Values.Where(f => f.Attributes.ContainsKey("onvif.present")).ToList();
     }
 
     private static ProtocolFinding GetOrCreate(Dictionary<IPAddress, ProtocolFinding> map, IPAddress ip)
@@ -76,6 +78,7 @@ public sealed class WsDiscovery
     internal static void ParseProbeMatches(byte[] data, ProtocolFinding finding)
     {
         var doc = XDocument.Parse(Encoding.UTF8.GetString(data));
+        bool isOnvif = false;
 
         foreach (var match in doc.Descendants().Where(e => e.Name.LocalName == "ProbeMatch"))
         {
@@ -83,25 +86,41 @@ public sealed class WsDiscovery
             string? scopes = Local(match, "Scopes");
             string? types = Local(match, "Types");
 
-            if (!string.IsNullOrWhiteSpace(xaddrs))
-                finding.Attributes["onvif.xaddr"] = xaddrs.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? xaddrs;
+            // WS-Discovery (UDP 3702) is shared by ONVIF cameras and Microsoft WSD
+            // printers/scanners. Treat it as ONVIF only on an ONVIF video type or an
+            // onvif.org scope — never on a bare WSD/print response.
+            if (!string.IsNullOrWhiteSpace(types) && ContainsOnvifVideoType(types!))
+                isOnvif = true;
 
-            if (!string.IsNullOrWhiteSpace(types))
-                finding.Attributes["onvif.types"] = types.Trim();
-
-            if (string.IsNullOrWhiteSpace(scopes)) continue;
-
-            foreach (var raw in scopes.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            if (!string.IsNullOrWhiteSpace(scopes))
             {
-                string scope = Uri.UnescapeDataString(raw);
-                finding.Scopes.Add(scope);
-                ApplyScope(scope, finding);
+                foreach (var raw in scopes!.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    string scope = Uri.UnescapeDataString(raw);
+                    if (!scope.Contains("onvif.org", StringComparison.OrdinalIgnoreCase)) continue;
+                    isOnvif = true;
+                    finding.Scopes.Add(scope);
+                    ApplyScope(scope, finding);
+                }
+            }
+
+            if (isOnvif)
+            {
+                if (!string.IsNullOrWhiteSpace(xaddrs))
+                    finding.Attributes["onvif.xaddr"] = xaddrs!.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? xaddrs!;
+                if (!string.IsNullOrWhiteSpace(types))
+                    finding.Attributes["onvif.types"] = types!.Trim();
             }
         }
 
-        // A device that answered WS-Discovery at all is almost certainly a camera/NVR/encoder.
-        finding.Attributes.TryAdd("onvif.present", "true");
+        if (isOnvif)
+            finding.Attributes["onvif.present"] = "true";
     }
+
+    private static bool ContainsOnvifVideoType(string types) =>
+        types.Contains("NetworkVideoTransmitter", StringComparison.OrdinalIgnoreCase) ||
+        types.Contains("NetworkVideoDisplay", StringComparison.OrdinalIgnoreCase) ||
+        types.Contains("NetworkVideoStorage", StringComparison.OrdinalIgnoreCase);
 
     private static void ApplyScope(string scope, ProtocolFinding finding)
     {
