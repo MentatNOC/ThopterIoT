@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!-- NativeAOT hygiene: the whole engine must be trim/AOT clean.
+         Warnings are errors so drift is caught in CI, not at publish time. -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsTrimmable>true</IsTrimmable>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <RootNamespace>Thopter.Discovery</RootNamespace>
+    <AssemblyName>Thopter.Discovery</AssemblyName>
+    <Description>Driver-free local-network device and IP-camera discovery engine for Thopter. Unauthenticated, one-shot, no telemetry.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- IEEE public OUI dataset (MA-L/MA-M/MA-S), regenerate with tools/update-oui/Update-Oui.ps1 -->
+    <EmbeddedResource Include="Oui\oui.tsv" LogicalName="Thopter.Discovery.Oui.oui.tsv" />
+  </ItemGroup>
+
+</Project>

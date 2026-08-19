@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: Build & test (windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore Thopter.sln
+
+      - name: Build (Release, warnings as errors)
+        run: dotnet build Thopter.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test Thopter.sln -c Release --no-build --verbosity normal
+
+  wall-check:
+    name: Open-core wall-check
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Static wall-checks (forbidden refs + strings)
+        shell: pwsh
+        run: ./tools/wall-check/Check-Wall.ps1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Egress-guard tests (runtime wall-check)
+        run: dotnet test Thopter.sln -c Release --filter Category=WallCheck
+
+  # Publishing the signed AOT single-file + MSI happens on tag (v*) during the packaging step.
+  # aot-publish job is intentionally deferred until the packaging step (build order step 4).

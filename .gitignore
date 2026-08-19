@@ -1,0 +1,46 @@
+# .NET build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+publish/
+artifacts/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# NativeAOT / publish intermediates
+*.pdb
+*.ni.dll
+*.ni.exe
+
+# Rider / VS / VS Code
+.vs/
+.idea/
+.vscode/
+*.DotSettings.user
+
+# Test results
+[Tt]est[Rr]esults/
+*.trx
+*.coverage
+*.coveragexml
+coverage/
+
+# OUI raw CSVs are NOT committed — only the generated oui.tsv is embedded.
+tools/update-oui/raw/
+**/mal.csv
+**/mam.csv
+**/mas.csv
+
+# OS cruft
+Thumbs.db
+.DS_Store
+
+# Internal build blueprint — kept locally, NOT published.
+/BUILD-SPEC.md

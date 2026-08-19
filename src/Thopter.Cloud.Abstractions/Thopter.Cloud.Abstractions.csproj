@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- netstandard2.0 so it can be consumed by the (private) connector on any runtime,
+         and published to nuget.org so the public contract is independently auditable. -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>true</IsPackable>
+    <PackageId>Thopter.Cloud.Abstractions</PackageId>
+    <Title>Thopter Cloud Abstractions</Title>
+    <Description>The public open-core seam for Thopter: IFindingsSink plus the commodity thopter.findings/v1 DTOs. Contains zero MentatNOC references — the request side is commodity, the response side is deliberately opaque.</Description>
+    <PackageTags>thopter;iot;discovery;onvif;open-core</PackageTags>
+  </PropertyGroup>
+
+</Project>

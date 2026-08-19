@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Thopter.App</RootNamespace>
+    <AssemblyName>Thopter.App</AssemblyName>
+
+    <!-- Avalonia: compiled bindings only. x:DataType is set on every view; reflection
+         bindings fail silently under NativeAOT so this is not optional. -->
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+
+    <!-- No admin: sockets + NIC enumeration + light identify need no elevation. -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <!-- NativeAOT hygiene (required, warnings-as-errors clean). TrimMode full is implied
+         by PublishAot; InvariantGlobalization drops ICU for a smaller, simpler AOT build. -->
+    <PublishAot>true</PublishAot>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <Description>ThopterIoT desktop GUI — local-network IoT/IP-camera discovery scanner (free, open-core front end for MentatNOC).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.1.5" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.1.5" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.5" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.1.5" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <!-- Avalonia XAML diagnostics overlay (Alt+Shift+F12) — Debug-only, not shipped in Release. -->
+    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.1.5" />
+    <!-- Security: override Avalonia's transitive Tmds.DBus.Protocol (0.16.0, GHSA-xrw6-gwf8-vvr9)
+         with a patched build. It's Linux D-Bus support only and never loads on Windows, but we
+         don't ship a known-vulnerable package. Remove if/when Avalonia bumps it upstream. -->
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.94.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Thopter.Discovery\Thopter.Discovery.csproj" />
+    <ProjectReference Include="..\Thopter.Cloud.Abstractions\Thopter.Cloud.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,82 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Thopter.App.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        x:Class="Thopter.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        x:CompileBindings="True"
+        d:DesignWidth="920" d:DesignHeight="640"
+        Width="920" Height="640"
+        Title="ThopterIoT">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel />
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,*,Auto,Auto" Margin="12">
+
+        <!-- Scan control bar -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock Text="Interface:" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding Interfaces}"
+                      SelectedItem="{Binding SelectedInterface}"
+                      MinWidth="280" />
+            <Button Content="Scan" Command="{Binding ScanCommand}" />
+            <Button Content="Cancel" Command="{Binding CancelCommand}" />
+            <Button Content="Export" Command="{Binding ExportCommand}" />
+        </StackPanel>
+
+        <!-- Device list: header row + ListBox sharing the same column grid -->
+        <Grid Grid.Row="1" RowDefinitions="Auto,*">
+
+            <Border Grid.Row="0" Background="#14808080" Padding="8,4">
+                <Grid ColumnDefinitions="130,150,180,90,150,*">
+                    <TextBlock Grid.Column="0" Text="IP" FontWeight="Bold" />
+                    <TextBlock Grid.Column="1" Text="MAC" FontWeight="Bold" />
+                    <TextBlock Grid.Column="2" Text="Vendor" FontWeight="Bold" />
+                    <TextBlock Grid.Column="3" Text="Type" FontWeight="Bold" />
+                    <TextBlock Grid.Column="4" Text="Discovered via" FontWeight="Bold" />
+                    <TextBlock Grid.Column="5" Text="Open ports" FontWeight="Bold" />
+                </Grid>
+            </Border>
+
+            <ListBox Grid.Row="1" ItemsSource="{Binding Devices}" SelectionMode="Single">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:DeviceRow">
+                        <Grid ColumnDefinitions="130,150,180,90,150,*">
+                            <TextBlock Grid.Column="0" Text="{Binding Ip}" />
+                            <TextBlock Grid.Column="1" Text="{Binding Mac}" />
+                            <TextBlock Grid.Column="2" Text="{Binding Vendor}" />
+                            <TextBlock Grid.Column="3" Text="{Binding Type}" />
+                            <TextBlock Grid.Column="4" Text="{Binding Sources}" />
+                            <TextBlock Grid.Column="5" Text="{Binding Ports}" TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+
+        <!-- Status bar -->
+        <StackPanel Grid.Row="2" Spacing="4" Margin="0,8,0,8">
+            <ProgressBar Minimum="0" Maximum="100"
+                         Value="{Binding ProgressValue}"
+                         IsIndeterminate="{Binding IsProgressIndeterminate}"
+                         Height="4" />
+            <TextBlock Text="{Binding StatusText}" />
+        </StackPanel>
+
+        <!-- Upgrade panel: visually separated, inert CTA -->
+        <Border Grid.Row="3" BorderBrush="Gray" BorderThickness="1" CornerRadius="4" Padding="12">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0"
+                           Text="Get reports + monitoring with MentatNOC"
+                           VerticalAlignment="Center" />
+                <Button Grid.Column="1" Content="Upgrade" Command="{Binding UpgradeCommand}" />
+            </Grid>
+        </Border>
+
+    </Grid>
+
+</Window>

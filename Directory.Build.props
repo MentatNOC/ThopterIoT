@@ -1,0 +1,17 @@
+<Project>
+  <!-- Shared settings for every project in the Thopter public solution.
+       AOT/trim specifics live in each project that opts in (Discovery, App). -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <Authors>MentatNOC / Desert Lakes Solutions</Authors>
+    <Product>ThopterIoT</Product>
+    <Company>MentatNOC</Company>
+    <Copyright>Copyright 2026 MentatNOC. Licensed under the Apache License, Version 2.0.</Copyright>
+    <RepositoryUrl>https://github.com/MentatNOC/ThopterIoT</RepositoryUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+  </PropertyGroup>
+</Project>
