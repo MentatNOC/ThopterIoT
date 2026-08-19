@@ -8,8 +8,12 @@
         x:Class="Thopter.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         x:CompileBindings="True"
-        d:DesignWidth="980" d:DesignHeight="680"
-        Width="980" Height="680"
+        d:DesignWidth="1000" d:DesignHeight="700"
+        Width="1000" Height="700"
+        Background="{StaticResource InkBrush}"
+        Foreground="{StaticResource BoneBrush}"
+        FontFamily="{StaticResource BrandFont}"
+        FontSize="13"
         Title="ThopterIoT">
 
     <Design.DataContext>
@@ -20,10 +24,10 @@
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
-                    <SolidColorBrush x:Key="DetailCardBrush" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="DetailCardBrush" Color="#141416" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
-                    <SolidColorBrush x:Key="DetailCardBrush" Color="#2B2B2B" />
+                    <SolidColorBrush x:Key="DetailCardBrush" Color="#141416" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
@@ -32,27 +36,28 @@
     <Window.Styles>
         <!-- Discovered-via pills -->
         <Style Selector="Border.badge">
-            <Setter Property="Background" Value="#22808080" />
+            <Setter Property="Background" Value="#1AF4F1EA" />
             <Setter Property="CornerRadius" Value="3" />
             <Setter Property="Padding" Value="5,1" />
             <Setter Property="Margin" Value="0,0,4,2" />
         </Style>
         <Style Selector="Border.badge.accent">
-            <Setter Property="Background" Value="#3540A0F0" />
+            <Setter Property="Background" Value="#33C2342B" />
         </Style>
         <Style Selector="Border.badge TextBlock">
             <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="#F4F1EA" />
         </Style>
         <Style Selector="Border.badge.accent TextBlock">
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
 
-        <!-- Row emphasis: dim unknown-vendor hosts; tint ONVIF-confirmed cameras -->
+        <!-- Row emphasis: dim unknown-vendor hosts; tint ONVIF-confirmed cameras sapho red -->
         <Style Selector="Border.rowroot.unknown">
-            <Setter Property="Opacity" Value="0.55" />
+            <Setter Property="Opacity" Value="0.5" />
         </Style>
         <Style Selector="Border.rowroot.onvif">
-            <Setter Property="Background" Value="#1840A0F0" />
+            <Setter Property="Background" Value="#14C2342B" />
         </Style>
 
         <!-- Stretch list rows so columns line up with the header -->
@@ -63,7 +68,7 @@
 
         <!-- Detail flyout key labels -->
         <Style Selector="TextBlock.detailkey">
-            <Setter Property="Opacity" Value="0.7" />
+            <Setter Property="Foreground" Value="{StaticResource MuteBrush}" />
             <Setter Property="Margin" Value="0,0,12,2" />
         </Style>
         <Style Selector="TextBlock.detailval">
@@ -72,6 +77,7 @@
         </Style>
         <Style Selector="TextBlock.sectionhead">
             <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource SaphoBrush}" />
             <Setter Property="Margin" Value="0,10,0,3" />
         </Style>
     </Window.Styles>
@@ -79,10 +85,27 @@
     <!-- Root: main content with the detail flyout overlaid on top -->
     <Grid>
 
-        <Grid RowDefinitions="Auto,*,Auto,Auto" Margin="12">
+        <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" Margin="14">
+
+            <!-- Brand header -->
+            <Border Grid.Row="0" BorderBrush="{StaticResource HairlineStrongBrush}"
+                    BorderThickness="0,0,0,1" Padding="0,0,0,9" Margin="0,0,0,11">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
+                        <Border Width="11" Height="11" Background="{StaticResource SaphoBrush}" CornerRadius="2" />
+                        <TextBlock Text="ThopterIoT" FontWeight="Bold" FontSize="17" VerticalAlignment="Center" />
+                        <TextBlock Text="local IoT + camera discovery" Foreground="{StaticResource MuteBrush}"
+                                   FontSize="12" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="by Mentat" Foreground="{StaticResource MuteBrush}" FontSize="12" />
+                        <TextBlock Text="NOC" Foreground="{StaticResource SaphoBrush}" FontSize="12" FontWeight="SemiBold" />
+                    </StackPanel>
+                </Grid>
+            </Border>
 
             <!-- Scan control bar -->
-            <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,0,0,10">
                 <TextBlock Text="Interface:" VerticalAlignment="Center" />
                 <ComboBox ItemsSource="{Binding Interfaces}"
                           SelectedItem="{Binding SelectedInterface}"
@@ -94,7 +117,8 @@
                          IsEnabled="{Binding !IsScanning}"
                          Width="150"
                          VerticalAlignment="Center" />
-                <Button Content="Scan" Command="{Binding ScanCommand}" IsDefault="True" />
+                <Button Content="Scan" Command="{Binding ScanCommand}" IsDefault="True"
+                        Classes="accent" />
                 <Button Content="Cancel" Command="{Binding CancelCommand}" />
                 <Button x:Name="ExportButton" Content="Export…"
                         Click="OnExportClick"
@@ -102,10 +126,11 @@
             </StackPanel>
 
             <!-- Device list: header row + ListBox sharing the same column grid -->
-            <Grid Grid.Row="1" RowDefinitions="Auto,*">
+            <Grid Grid.Row="2" RowDefinitions="Auto,*">
 
-                <Border Grid.Row="0" Background="#14808080" Padding="8,4">
-                    <Grid ColumnDefinitions="130,150,180,90,165,*">
+                <Border Grid.Row="0" Background="{StaticResource InkRaiseBrush}"
+                        BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,0,0,1" Padding="8,5">
+                    <Grid ColumnDefinitions="140,165,190,110,175,*">
                         <TextBlock Grid.Column="0" Text="IP" FontWeight="Bold" />
                         <TextBlock Grid.Column="1" Text="MAC" FontWeight="Bold" />
                         <TextBlock Grid.Column="2" Text="Vendor" FontWeight="Bold" />
@@ -116,6 +141,7 @@
                 </Border>
 
                 <ListBox x:Name="DeviceList" Grid.Row="1"
+                         Background="Transparent"
                          ItemsSource="{Binding Devices}"
                          SelectionMode="Single"
                          DoubleTapped="OnDeviceDoubleTapped">
@@ -125,7 +151,7 @@
                                     Classes.unknown="{Binding IsUnknownVendor}"
                                     Classes.onvif="{Binding IsOnvifConfirmed}"
                                     Padding="8,4">
-                                <Grid ColumnDefinitions="130,150,180,90,165,*">
+                                <Grid ColumnDefinitions="140,165,190,110,175,*">
                                     <TextBlock Grid.Column="0" Text="{Binding Ip}" VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="1" Text="{Binding Mac}" VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="2" Text="{Binding Vendor}" VerticalAlignment="Center"
@@ -156,24 +182,28 @@
             </Grid>
 
             <!-- Status bar -->
-            <StackPanel Grid.Row="2" Spacing="4" Margin="0,8,0,8">
+            <StackPanel Grid.Row="3" Spacing="5" Margin="0,10,0,10">
                 <ProgressBar Minimum="0" Maximum="100"
                              Value="{Binding ProgressValue}"
                              IsIndeterminate="{Binding IsProgressIndeterminate}"
-                             Height="4" />
-                <TextBlock Text="{Binding StatusText}" />
+                             Foreground="{StaticResource SaphoBrush}"
+                             Height="3" />
+                <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource MuteBrush}" />
             </StackPanel>
 
             <!-- Upgrade panel: visually separated, inert CTA -->
-            <Border Grid.Row="3" BorderBrush="#40808080" BorderThickness="1" CornerRadius="4" Padding="12">
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+            <Border Grid.Row="4" Background="{StaticResource InkRaiseBrush}"
+                    BorderBrush="{StaticResource HairlineStrongBrush}" BorderThickness="1"
+                    CornerRadius="5" Padding="0">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Border Grid.Column="0" Width="3" Background="{StaticResource SaphoBrush}" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="14,12">
                         <TextBlock Text="Get reports + monitoring with MentatNOC" FontWeight="SemiBold" />
                         <TextBlock Text="ThopterIoT scans locally and stores nothing. Upgrade to keep history, generate reports, and monitor your fleet."
-                                   Opacity="0.7" FontSize="12" TextWrapping="Wrap" />
+                                   Foreground="{StaticResource MuteBrush}" FontSize="12" TextWrapping="Wrap" />
                     </StackPanel>
-                    <Button Grid.Column="1" Content="Upgrade" Command="{Binding UpgradeCommand}"
-                            VerticalAlignment="Center" />
+                    <Button Grid.Column="2" Content="Upgrade" Command="{Binding UpgradeCommand}"
+                            Classes="accent" VerticalAlignment="Center" Margin="0,0,14,0" />
                 </Grid>
             </Border>
 
@@ -181,22 +211,24 @@
 
         <!-- Detail flyout overlay (double-click a row) -->
         <Border IsVisible="{Binding IsDetailOpen}"
-                Background="#99000000">
-            <Border MaxWidth="620" MaxHeight="560"
+                Background="#B3000000">
+            <Border MaxWidth="640" MaxHeight="580"
                     Margin="24"
                     HorizontalAlignment="Center" VerticalAlignment="Center"
                     Background="{DynamicResource DetailCardBrush}"
-                    BorderBrush="#40808080" BorderThickness="1"
+                    BorderBrush="{StaticResource HairlineStrongBrush}" BorderThickness="1"
                     CornerRadius="8" Padding="18"
-                    BoxShadow="0 8 24 0 #66000000">
+                    BoxShadow="0 10 30 0 #99000000">
                 <Grid RowDefinitions="Auto,*">
 
-                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,4">
-                        <StackPanel Grid.Column="0">
+                    <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,4">
+                        <Border Grid.Column="0" Width="4" Background="{StaticResource SaphoBrush}"
+                                CornerRadius="2" Margin="0,2,12,2" />
+                        <StackPanel Grid.Column="1">
                             <TextBlock Text="{Binding SelectedDetail.Title}" FontSize="20" FontWeight="Bold" />
-                            <TextBlock Text="{Binding SelectedDetail.Subtitle}" Opacity="0.75" />
+                            <TextBlock Text="{Binding SelectedDetail.Subtitle}" Foreground="{StaticResource MuteBrush}" />
                         </StackPanel>
-                        <Button Grid.Column="1" Content="Close" Command="{Binding CloseDetailCommand}"
+                        <Button Grid.Column="2" Content="Close" Command="{Binding CloseDetailCommand}"
                                 VerticalAlignment="Top" />
                     </Grid>
 
@@ -234,7 +266,7 @@
                                           IsVisible="{Binding SelectedDetail.HasPorts}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="sys:String">
-                                        <TextBlock Text="{Binding}" TextWrapping="Wrap" FontFamily="Consolas,monospace" />
+                                        <TextBlock Text="{Binding}" TextWrapping="Wrap" />
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>

@@ -1,7 +1,30 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Thopter.App.App"
-             RequestedThemeVariant="Default">
+             RequestedThemeVariant="Dark">
+
+    <Application.Resources>
+        <!-- MentatNOC brand: near-black + off-white do the work; sapho red is punctuation. -->
+        <FontFamily x:Key="BrandFont">avares://Thopter.App/Assets/Fonts/MartianMono-Variable.ttf#Martian Mono</FontFamily>
+
+        <Color x:Key="SaphoColor">#C2342B</Color>
+        <SolidColorBrush x:Key="SaphoBrush" Color="#C2342B" />
+        <SolidColorBrush x:Key="InkBrush" Color="#0E0E10" />
+        <SolidColorBrush x:Key="InkRaiseBrush" Color="#141416" />
+        <SolidColorBrush x:Key="BoneBrush" Color="#F4F1EA" />
+        <SolidColorBrush x:Key="MuteBrush" Color="#807F7C" />
+        <SolidColorBrush x:Key="HairlineBrush" Color="#F4F1EA" Opacity="0.10" />
+        <SolidColorBrush x:Key="HairlineStrongBrush" Color="#F4F1EA" Opacity="0.22" />
+
+        <!-- Drive the Fluent accent (buttons, focus ring, selection, progress) from sapho red. -->
+        <Color x:Key="SystemAccentColor">#C2342B</Color>
+        <Color x:Key="SystemAccentColorDark1">#B02E26</Color>
+        <Color x:Key="SystemAccentColorDark2">#9A2820</Color>
+        <Color x:Key="SystemAccentColorDark3">#84221B</Color>
+        <Color x:Key="SystemAccentColorLight1">#CE4A41</Color>
+        <Color x:Key="SystemAccentColorLight2">#D96259</Color>
+        <Color x:Key="SystemAccentColorLight3">#E37B72</Color>
+    </Application.Resources>
 
     <Application.Styles>
         <FluentTheme />

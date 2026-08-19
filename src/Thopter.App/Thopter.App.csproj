@@ -28,6 +28,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- MentatNOC brand font (Martian Mono, SIL OFL) embedded for a driverless single-file app. -->
+    <AvaloniaResource Include="Assets\Fonts\MartianMono-Variable.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.1.5" />
     <PackageReference Include="Avalonia.Desktop" Version="11.1.5" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.5" />
