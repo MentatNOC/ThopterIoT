@@ -153,6 +153,20 @@ public static class NetInfo
         };
     }
 
+    /// <summary>
+    /// True for addresses the tool is permitted to talk to: RFC1918 private, 169.254/16
+    /// link-local, or loopback. Everything else (public/internet) is refused — this is
+    /// the egress guard from the open-core wall.
+    /// </summary>
+    public static bool IsLanScannable(IPAddress address)
+    {
+        if (address.AddressFamily != AddressFamily.InterNetwork) return false;
+        if (IPAddress.IsLoopback(address)) return true;
+        if (IsPrivate(address)) return true;
+        byte[] b = address.GetAddressBytes();
+        return b[0] == 169 && b[1] == 254; // link-local
+    }
+
     internal static uint ToUInt(IPAddress address) =>
         BinaryPrimitives.ReadUInt32BigEndian(address.GetAddressBytes());
 

@@ -111,7 +111,7 @@ public sealed class ArpSweep
     /// <summary>
     /// Walk MIB_IPNET_TABLE2 and return reachable/stale/permanent IPv4 neighbors with a real 6-byte MAC.
     /// </summary>
-    private static unsafe Dictionary<IPAddress, PhysicalAddress> ReadNeighborTable()
+    internal static unsafe Dictionary<IPAddress, PhysicalAddress> ReadNeighborTable()
     {
         var result = new Dictionary<IPAddress, PhysicalAddress>();
 

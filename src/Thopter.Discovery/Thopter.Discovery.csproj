@@ -23,4 +23,8 @@
     <EmbeddedResource Include="Oui\oui.tsv" LogicalName="Thopter.Discovery.Oui.oui.tsv" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Thopter.Tests" />
+  </ItemGroup>
+
 </Project>

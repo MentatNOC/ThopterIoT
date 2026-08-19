@@ -61,6 +61,37 @@ public sealed class DiscoveredDevice
             _openPorts.Add(port);
     }
 
+    private readonly List<string> _onvifScopes = new();
+    private readonly List<string> _mdnsServices = new();
+    private readonly Dictionary<string, string> _attributes = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Decoded ONVIF scopes (onvif://www.onvif.org/...), when the device answered WS-Discovery.</summary>
+    public IReadOnlyList<string> OnvifScopes => _onvifScopes;
+
+    /// <summary>mDNS/DNS-SD service types advertised by the device.</summary>
+    public IReadOnlyList<string> MdnsServices => _mdnsServices;
+
+    /// <summary>Evidence bag of unauthenticated attributes (http.server, tls.cn, ssdp.st, mdns.txt.md, ...).</summary>
+    public IReadOnlyDictionary<string, string> Attributes => _attributes;
+
+    public void AddOnvifScope(string scope)
+    {
+        if (!string.IsNullOrWhiteSpace(scope) && !_onvifScopes.Contains(scope))
+            _onvifScopes.Add(scope);
+    }
+
+    public void AddMdnsService(string service)
+    {
+        if (!string.IsNullOrWhiteSpace(service) && !_mdnsServices.Contains(service))
+            _mdnsServices.Add(service);
+    }
+
+    public void SetAttribute(string key, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+            _attributes[key] = value!.Trim();
+    }
+
     private static int CompareAddresses(IPAddress a, IPAddress b)
     {
         byte[] ab = a.GetAddressBytes(), bb = b.GetAddressBytes();

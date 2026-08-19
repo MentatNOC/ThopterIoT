@@ -1,6 +1,7 @@
 using System.Net;
 using Thopter.Discovery.Arp;
 using Thopter.Discovery.Net;
+using Thopter.Discovery.PortScan;
 
 namespace Thopter.Discovery;
 
@@ -21,7 +22,18 @@ public sealed class DiscoveryOptions
 
     public ArpSweepOptions Arp { get; init; } = new();
 
-    // --- Protocol-layer toggles (wired up in step 2; present now so the API is stable) ---
+    /// <summary>How long each multicast protocol probe listens for replies.</summary>
+    public int ProtocolWindowMs { get; init; } = 2500;
+
+    public TcpScanOptions PortScan { get; init; } = new();
+
+    /// <summary>
+    /// Port-scan every enumerated target, not just hosts that answered ICMP/multicast.
+    /// Needed to catch ping-silent cameras and to scan routed subnets at all. Default on.
+    /// </summary>
+    public bool PortScanAllTargets { get; init; } = true;
+
+    // --- Protocol-layer toggles ---
     public bool EnableOnvif { get; init; } = true;
     public bool EnableSsdp { get; init; } = true;
     public bool EnableMdns { get; init; } = true;
