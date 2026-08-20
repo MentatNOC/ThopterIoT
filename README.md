@@ -45,7 +45,7 @@ Add `--json` for machine-readable output.
 
 ## What it does on your network
 
-ThopterIoT does light identify only, and it never phones home. Every request it makes is unauthenticated and standard - the kind of thing a device already answers for anyone on the LAN:
+ThopterIoT does light identify only. Every request it makes is unauthenticated and standard - the kind of thing a device already answers for anyone on the LAN:
 
 - L2 MAC + IEEE OUI vendor
 - ICMP reachability
