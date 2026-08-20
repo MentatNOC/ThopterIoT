@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Thopter.App.ViewModels"
+        xmlns:controls="using:Thopter.App.Controls"
         xmlns:sys="using:System"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -210,11 +211,21 @@
                                         <Path HorizontalAlignment="Left"  VerticalAlignment="Bottom" Data="M0,0 L0,11 L11,11" />
                                         <Path HorizontalAlignment="Right" VerticalAlignment="Bottom" Data="M11,0 L11,11 L0,11" />
                                     </Grid>
+
+                                    <!-- One-shot spice gust across the row when a camera is identified -->
+                                    <controls:SpiceSweep IsPending="{Binding SpiceSweepPending}" Margin="-8,-4" />
                                 </Grid>
                             </Border>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
+
+                <!-- Scan-in-progress ornithopter: flutters over the results area, pace tied
+                     to overall scan progress, drifting slowly. Hit-test invisible. -->
+                <controls:WingFlutter Grid.Row="1"
+                                      IsVisible="{Binding IsScanning}"
+                                      IsActive="{Binding IsScanning}"
+                                      Progress="{Binding ScanProgress}" />
             </Grid>
 
             <!-- Status bar -->

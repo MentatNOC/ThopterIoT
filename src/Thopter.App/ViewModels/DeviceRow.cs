@@ -51,6 +51,16 @@ public sealed partial class DeviceRow : ObservableObject
     /// <summary>Answered ONVIF WS-Discovery - a strong camera/NVR signal, rendered accented.</summary>
     [ObservableProperty] private bool _isOnvifConfirmed;
 
+    /// <summary>
+    /// One-shot cue for the spice-sweep effect: set the first time this row is identified
+    /// as a camera or recorder (ONVIF answer, or fused Camera/Nvr type), consumed by the
+    /// view when the sweep plays. Never re-arms, so list virtualization and later refreshes
+    /// can't replay it; cues left un-played when the scan ends are cleared by the view model.
+    /// </summary>
+    [ObservableProperty] private bool _spiceSweepPending;
+
+    private bool _sweepFired;
+
     public DeviceRow(DiscoveredDevice device)
     {
         Device = device;
@@ -77,7 +87,16 @@ public sealed partial class DeviceRow : ObservableObject
         SourceBadges = BuildBadges(device.Sources);
         IsUnknownVendor = string.IsNullOrEmpty(device.Vendor);
         IsOnvifConfirmed = device.Sources.HasFlag(DiscoverySource.Onvif);
+
+        if (!_sweepFired && (IsOnvifConfirmed || device.Type is DeviceType.Camera or DeviceType.Nvr))
+        {
+            _sweepFired = true;
+            SpiceSweepPending = true;
+        }
     }
+
+    /// <summary>Called by the view once the spice sweep has started for this row.</summary>
+    public void ConsumeSpiceSweep() => SpiceSweepPending = false;
 
     private static IReadOnlyList<SourceBadge> BuildBadges(DiscoverySource sources)
     {

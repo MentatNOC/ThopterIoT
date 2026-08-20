@@ -36,23 +36,53 @@ public sealed class DiscoveryEngine
 
     public int OuiRecordCount => _oui.Count;
 
+    // Overall-progress weights per pipeline stage. Rough shares of wall-clock time on a
+    // typical /24 with defaults; they only need to be plausible, not exact, since the UI
+    // uses the value for pacing, not for an ETA.
+    private const double StageAEnd = 0.30;   // ARP sweep
+    private const double StageBEnd = 0.50;   // multicast protocol window
+    private const double StageCEnd = 0.90;   // TCP port scan
+    private const double StageDEnd = 0.97;   // NBNS names
+                                             // fusion takes it to 1.0
+
+    public Task<IReadOnlyList<DiscoveredDevice>> ScanAsync(
+        DiscoveryOptions options,
+        IProgress<DiscoveredDevice>? progress,
+        CancellationToken ct)
+        => ScanAsync(options, progress, overallProgress: null, ct);
+
+    /// <summary>
+    /// Scan with an overall completion estimate: <paramref name="overallProgress"/> reports
+    /// monotonically increasing values from 0.0 to 1.0 across the pipeline stages. Reports
+    /// may arrive from pool threads and are throttled to meaningful increments.
+    /// </summary>
     public async Task<IReadOnlyList<DiscoveredDevice>> ScanAsync(
         DiscoveryOptions options,
         IProgress<DiscoveredDevice>? progress,
+        IProgress<double>? overallProgress,
         CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(options);
 
         var registry = new Dictionary<string, DiscoveredDevice>(StringComparer.Ordinal);
         var ipIndex = new Dictionary<IPAddress, DiscoveredDevice>();
+        var overall = new ThrottledFraction(overallProgress);
 
         var targets = options.ResolveTargets();
         if (targets.Count == 0)
+        {
+            overall.Report(1.0);
             return Array.Empty<DiscoveredDevice>();
+        }
 
         // --- Stage A: driver-free IP↔MAC sweep + OUI vendor ---
+        overall.Report(0.0);
+        long pingedCount = 0;
+        var pingedTick = new SyncProgress<IPAddress>(_ =>
+            overall.Report(StageAEnd * Interlocked.Increment(ref pingedCount) / targets.Count));
+
         var ipToMac = await new ArpSweep()
-            .SweepAsync(targets, options.Arp, pinged: null, ct)
+            .SweepAsync(targets, options.Arp, pinged: pingedTick, ct)
             .ConfigureAwait(false);
 
         foreach (var (ip, mac) in ipToMac)
@@ -61,6 +91,8 @@ public sealed class DiscoveryEngine
             var device = MergeArp(registry, ipIndex, ip, mac);
             progress?.Report(device);
         }
+
+        overall.Report(StageAEnd);
 
         // --- Stage B: concurrent multicast protocol probes ---
         var localAddresses = ResolveLocalAddresses(options);
@@ -73,11 +105,28 @@ public sealed class DiscoveryEngine
 
         if (probeTasks.Count > 0)
         {
-            var broadcast = await Task.WhenAll(probeTasks).ConfigureAwait(false);
+            // The probes run for a fixed listen window, so time elapsed IS the progress.
+            var whenAll = Task.WhenAll(probeTasks);
+            if (overallProgress is not null)
+            {
+                long startedMs = Environment.TickCount64;
+                double windowMs = Math.Max(1, options.ProtocolWindowMs);
+                // The cancellation check keeps a cancelled Task.Delay from turning this
+                // into a hot loop; the await of whenAll below still surfaces the OCE.
+                while (!whenAll.IsCompleted && !ct.IsCancellationRequested)
+                {
+                    await Task.WhenAny(whenAll, Task.Delay(120, ct)).ConfigureAwait(false);
+                    double frac = Math.Min(1.0, (Environment.TickCount64 - startedMs) / windowMs);
+                    overall.Report(StageAEnd + (StageBEnd - StageAEnd) * frac);
+                }
+            }
+
+            var broadcast = await whenAll.ConfigureAwait(false);
             foreach (var findings in broadcast)
                 foreach (var finding in findings)
                     ApplyFinding(MergeFinding(registry, ipIndex, finding), finding, progress);
         }
+        overall.Report(StageBEnd);
 
         // --- Stage C: TCP connect scan + banners ---
         if (options.EnablePortScan)
@@ -89,8 +138,11 @@ public sealed class DiscoveryEngine
 
             if (scanTargets.Count > 0)
             {
+                var portTick = new SyncProgress<double>(frac =>
+                    overall.Report(StageBEnd + (StageCEnd - StageBEnd) * frac));
+
                 var portFindings = await new TcpScanner()
-                    .ScanAsync(scanTargets, options.PortScan, ct)
+                    .ScanAsync(scanTargets, options.PortScan, portTick, ct)
                     .ConfigureAwait(false);
 
                 foreach (var finding in portFindings)
@@ -101,10 +153,12 @@ public sealed class DiscoveryEngine
                 BackfillMacsFromNeighborTable(registry, progress);
             }
         }
+        overall.Report(StageCEnd);
 
         // --- Stage D: NetBIOS name query for hosts still unnamed by the protocol layer ---
         if (options.EnableNbns)
             await ResolveNetbiosNamesAsync(registry, options.Nbns, progress, ct).ConfigureAwait(false);
+        overall.Report(StageDEnd);
 
         // --- Fusion: offline device type + model ---
         foreach (var device in registry.Values)
@@ -113,6 +167,7 @@ public sealed class DiscoveryEngine
             DeviceIdentifier.Identify(device);
             progress?.Report(device);
         }
+        overall.Report(1.0);
 
         return registry.Values
             .OrderBy(d => d.PrimaryAddress, IPAddressComparer.Instance)
@@ -260,6 +315,48 @@ public sealed class DiscoveryEngine
             .ToList();
 
         return addresses.Count > 0 ? addresses : new List<IPAddress> { IPAddress.Any };
+    }
+
+    /// <summary>
+    /// Synchronous <see cref="IProgress{T}"/> that invokes its callback inline on the
+    /// reporting thread. Unlike <see cref="Progress{T}"/> it never captures a sync context,
+    /// so worker-thread reports stay ordered relative to their Interlocked counters.
+    /// </summary>
+    private sealed class SyncProgress<T> : IProgress<T>
+    {
+        private readonly Action<T> _handler;
+        public SyncProgress(Action<T> handler) => _handler = handler;
+        public void Report(T value) => _handler(value);
+    }
+
+    /// <summary>
+    /// Forwards monotonically increasing fractions to the caller's progress sink, dropping
+    /// reports that move less than half a percent so per-host ticks don't flood the UI
+    /// dispatcher. Thread-safe; only the 0.0 and 1.0 endpoints bypass the step filter.
+    /// </summary>
+    private sealed class ThrottledFraction
+    {
+        private const double MinStep = 0.005;
+        private readonly IProgress<double>? _inner;
+        private readonly object _lock = new();
+        private double _last = -1;
+
+        public ThrottledFraction(IProgress<double>? inner) => _inner = inner;
+
+        public void Report(double value)
+        {
+            if (_inner is null) return;
+            // The forward happens inside the lock so admission and delivery order stay
+            // one and the same; the sink is a cheap dispatcher post, never a blocker.
+            lock (_lock)
+            {
+                bool boundary = value <= 0.0 || value >= 1.0;
+                if (!boundary && value - _last < MinStep) return;
+                if (value <= _last) return;
+                _last = value;
+                _inner.Report(value);
+            }
+        }
     }
 
     private sealed class IPAddressComparer : IComparer<IPAddress>
