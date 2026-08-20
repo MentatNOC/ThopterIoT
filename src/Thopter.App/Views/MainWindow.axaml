@@ -141,13 +141,14 @@
 
                 <Border Grid.Row="0" Background="{DynamicResource InkRaiseBrush}"
                         BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,0,0,1" Padding="8,5">
-                    <Grid ColumnDefinitions="140,165,190,110,175,*">
+                    <Grid ColumnDefinitions="125,145,160,115,145,145,*">
                         <TextBlock Grid.Column="0" Text="IP" FontWeight="Bold" />
                         <TextBlock Grid.Column="1" Text="MAC" FontWeight="Bold" />
                         <TextBlock Grid.Column="2" Text="Vendor" FontWeight="Bold" />
                         <TextBlock Grid.Column="3" Text="Type" FontWeight="Bold" />
                         <TextBlock Grid.Column="4" Text="Discovered via" FontWeight="Bold" />
-                        <TextBlock Grid.Column="5" Text="Open ports" FontWeight="Bold" />
+                        <TextBlock Grid.Column="5" Text="Hostname" FontWeight="Bold" />
+                        <TextBlock Grid.Column="6" Text="Open ports" FontWeight="Bold" />
                     </Grid>
                 </Border>
 
@@ -162,13 +163,25 @@
                                     Classes.unknown="{Binding IsUnknownVendor}"
                                     Classes.onvif="{Binding IsOnvifConfirmed}"
                                     Padding="8,4">
+                                <Border.ContextMenu>
+                                    <ContextMenu x:DataType="vm:DeviceRow">
+                                        <MenuItem Header="Copy IP" Click="OnCopyIpClick" />
+                                        <MenuItem Header="Copy MAC" Click="OnCopyMacClick" IsEnabled="{Binding HasMac}" />
+                                        <MenuItem Header="Open in browser" Click="OnOpenInBrowserClick" />
+                                    </ContextMenu>
+                                </Border.ContextMenu>
                                 <Grid>
-                                    <Grid ColumnDefinitions="140,165,190,110,175,*">
+                                    <Grid ColumnDefinitions="125,145,160,115,145,145,*">
                                         <TextBlock Grid.Column="0" Text="{Binding Ip}" VerticalAlignment="Center" />
                                         <TextBlock Grid.Column="1" Text="{Binding Mac}" VerticalAlignment="Center" />
                                         <TextBlock Grid.Column="2" Text="{Binding Vendor}" VerticalAlignment="Center"
                                                    TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Grid.Column="3" Text="{Binding Type}" VerticalAlignment="Center" />
+                                        <StackPanel Grid.Column="3" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Type}" />
+                                            <TextBlock Text="{Binding Model}" IsVisible="{Binding HasModel}"
+                                                       Foreground="{DynamicResource MuteBrush}" FontSize="11"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
                                         <ItemsControl Grid.Column="4" ItemsSource="{Binding SourceBadges}" VerticalAlignment="Center">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
@@ -183,7 +196,9 @@
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
-                                        <TextBlock Grid.Column="5" Text="{Binding Ports}" VerticalAlignment="Center"
+                                        <TextBlock Grid.Column="5" Text="{Binding Hostname}" VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Grid.Column="6" Text="{Binding Ports}" VerticalAlignment="Center"
                                                    TextTrimming="CharacterEllipsis" />
                                     </Grid>
 

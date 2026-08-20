@@ -1,5 +1,6 @@
 using System.Net;
 using Thopter.Discovery.Arp;
+using Thopter.Discovery.Nbns;
 using Thopter.Discovery.Net;
 using Thopter.Discovery.PortScan;
 
@@ -27,6 +28,8 @@ public sealed class DiscoveryOptions
 
     public TcpScanOptions PortScan { get; init; } = new();
 
+    public NbnsOptions Nbns { get; init; } = new();
+
     /// <summary>
     /// Port-scan every enumerated target, not just hosts that answered ICMP/multicast.
     /// Needed to catch ping-silent cameras and to scan routed subnets at all. Default on.
@@ -38,6 +41,9 @@ public sealed class DiscoveryOptions
     public bool EnableSsdp { get; init; } = true;
     public bool EnableMdns { get; init; } = true;
     public bool EnablePortScan { get; init; } = true;
+
+    /// <summary>Resolve Windows machine names via a NetBIOS node status query for hosts still unnamed after protocol discovery.</summary>
+    public bool EnableNbns { get; init; } = true;
 
     /// <summary>
     /// Resolve the concrete list of host IPs to sweep from the options.

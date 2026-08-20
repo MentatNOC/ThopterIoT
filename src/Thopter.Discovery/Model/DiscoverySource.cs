@@ -26,4 +26,7 @@ public enum DiscoverySource
 
     /// <summary>Had at least one open TCP port during the connect scan.</summary>
     PortScan = 1 << 5,
+
+    /// <summary>Answered a NetBIOS name-service node status query (UDP 137) with a machine name.</summary>
+    Nbns = 1 << 6,
 }

@@ -11,11 +11,12 @@ ThopterIoT is a local scanner. It runs one-shot, reports what it finds, and stop
 
 - **Every host with a MAC**, driver-free - a ping sweep seeds the OS ARP cache, then the IPv4 neighbor table is read via the in-box IP Helper API (`GetIpNetTable2`). No Npcap, no raw sockets, no elevation.
 - **The vendor for each MAC**, offline, via the embedded IEEE OUI registry (MA-L/MA-M/MA-S, longest-prefix match). Locally-administered / randomized MACs are flagged as such.
-- *(coming in the protocol layer)* ONVIF WS-Discovery, SSDP, mDNS/DNS-SD, and a light TCP port/banner scan, fused into an offline device type/model guess.
+- **The discovery protocols each device speaks** - ONVIF WS-Discovery, SSDP, mDNS/DNS-SD, and a light unauthenticated TCP port/banner scan - fused offline into a device type and model guess.
+- **A hostname for hosts that expose one** - from mDNS/SSDP where advertised, and otherwise from a direct NetBIOS node status query (UDP 137) that recovers Windows machine names on the LAN. No public DNS is ever queried.
 
 ## Status
 
-Early build. **Working today:** the driver-free IP + MAC + vendor discovery engine (`Thopter.Discovery`) and a headless scan mode. The Avalonia GUI and the protocol-discovery layer are in progress.
+Early build. **Working today:** the driver-free IP + MAC + vendor discovery engine, the protocol-discovery layer (ONVIF / SSDP / mDNS / TCP port scan + NetBIOS name resolution), and the Avalonia desktop GUI - a live device grid (IP, MAC, vendor, type/model, discovered-via, hostname, open ports) with a right-click row menu (copy IP, copy MAC, open in browser), a detail flyout, and CSV/JSON export. A headless `scan` mode is also available.
 ## Try the headless scan
 
 ```bash
@@ -46,7 +47,7 @@ Add `--json` for machine-readable output.
 
 ThopterIoT does **light identify only**. It is a hard, structural rule that the open tool contains no monitoring intellectual property and leaks nothing about how MentatNOC monitors:
 
-**Allowed** (unauthenticated, standard, one-shot): L2 MAC + IEEE OUI; ICMP reachability; ONVIF WS-Discovery scopes; SSDP + the device's own advertised description; mDNS PTR/SRV/TXT/A; TCP connect open/closed; HTTP `Server` / `WWW-Authenticate`; TLS cert CN; RTSP `OPTIONS`.
+**Allowed** (unauthenticated, standard, one-shot): L2 MAC + IEEE OUI; ICMP reachability; ONVIF WS-Discovery scopes; SSDP + the device's own advertised description; mDNS PTR/SRV/TXT/A; NetBIOS node status (machine name, UDP 137); TCP connect open/closed; HTTP `Server` / `WWW-Authenticate`; TLS cert CN; RTSP `OPTIONS`.
 
 **Never, in the open tool:** any authenticated call, any media (RTSP `DESCRIBE`/`PLAY`, snapshots, frames), any SNMP, any continuous observation (health, uptime, tamper, baselining, polling loops), any compliance logic, and **any telemetry / call-home / attestation**. The paid connector is a separate, out-of-process signed executable in a separate private repository; the dependency arrow only ever points private → public. CI enforces this (see `.github/workflows/ci.yml`).
 

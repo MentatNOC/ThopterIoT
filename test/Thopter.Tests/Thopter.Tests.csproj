@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Thopter.Discovery\Thopter.Discovery.csproj" />
     <ProjectReference Include="..\..\src\Thopter.Cloud.Abstractions\Thopter.Cloud.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Thopter.App\Thopter.App.csproj" />
   </ItemGroup>
 
 </Project>

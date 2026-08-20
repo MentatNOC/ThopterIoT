@@ -33,7 +33,15 @@ public sealed partial class DeviceRow : ObservableObject
     [ObservableProperty] private string _mac = "-";
     [ObservableProperty] private string _vendor = "-";
     [ObservableProperty] private string _type = "Unknown";
+    [ObservableProperty] private string _model = "-";
+    [ObservableProperty] private string _hostname = "-";
     [ObservableProperty] private string _ports = "-";
+
+    /// <summary>A real MAC was resolved (not "-") - gates the "Copy MAC" context-menu item.</summary>
+    [ObservableProperty] private bool _hasMac;
+
+    /// <summary>An offline model string was fused - shows the dim second line under the type.</summary>
+    [ObservableProperty] private bool _hasModel;
 
     [ObservableProperty] private IReadOnlyList<SourceBadge> _sourceBadges = [];
 
@@ -54,10 +62,14 @@ public sealed partial class DeviceRow : ObservableObject
     {
         Ip = device.PrimaryAddress.ToString();
         Mac = device.MacString ?? "-";
+        HasMac = device.MacString is not null;
         Vendor = device.IsLocallyAdministered
             ? (device.Vendor ?? "randomized / local")
             : (device.Vendor ?? "-");
         Type = device.Type.ToString();
+        Model = device.Model ?? "-";
+        HasModel = !string.IsNullOrEmpty(device.Model);
+        Hostname = device.Hostname ?? "-";
         Ports = device.OpenPorts.Count == 0
             ? "-"
             : string.Join(", ", device.OpenPorts.Select(p => p.ToString()));
@@ -75,6 +87,7 @@ public sealed partial class DeviceRow : ObservableObject
         if (sources.HasFlag(DiscoverySource.Ssdp)) badges.Add(new SourceBadge { Text = "SSDP" });
         if (sources.HasFlag(DiscoverySource.Mdns)) badges.Add(new SourceBadge { Text = "mDNS" });
         if (sources.HasFlag(DiscoverySource.PortScan)) badges.Add(new SourceBadge { Text = "TCP" });
+        if (sources.HasFlag(DiscoverySource.Nbns)) badges.Add(new SourceBadge { Text = "NBNS" });
         return badges;
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using Avalonia;
@@ -23,6 +24,55 @@ public partial class MainWindow : Window
     {
         if (DataContext is MainWindowViewModel vm && DeviceList.SelectedItem is DeviceRow row)
             vm.ShowDetail(row);
+    }
+
+    // --- Row context menu. The MenuItem's DataContext is the row's DeviceRow (inherited from
+    // the Border the ContextMenu is attached to). The clipboard comes from the TopLevel. ---
+
+    private void OnCopyIpClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem { DataContext: DeviceRow row })
+            CopyToClipboard(row.Ip);
+    }
+
+    private void OnCopyMacClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem { DataContext: DeviceRow row } && row.HasMac)
+            CopyToClipboard(row.Mac);
+    }
+
+    private void OnOpenInBrowserClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem { DataContext: DeviceRow row }) return;
+
+        string ip = row.Ip;
+        // Reject the address-less sentinels: IPAddress.Any ("0.0.0.0") and IPAddress.None
+        // ("255.255.255.255", what PrimaryAddress yields for a device with no address).
+        if (string.IsNullOrWhiteSpace(ip) || ip == "0.0.0.0" || ip == "255.255.255.255") return;
+
+        // AOT-safe launch via the OS shell, same pattern as the upgrade CTA.
+        try
+        {
+            Process.Start(new ProcessStartInfo { FileName = $"http://{ip}", UseShellExecute = true });
+        }
+        catch (Exception ex) when (DataContext is MainWindowViewModel vm)
+        {
+            vm.StatusText = $"Could not open browser: {ex.Message}";
+        }
+        catch
+        {
+            // no view model to report to - opening a browser is best-effort
+        }
+    }
+
+    private void CopyToClipboard(string text)
+    {
+        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+        if (clipboard is null)
+            return;
+
+        // Fire-and-forget: SetTextAsync completes on the UI thread; a copy failure is not fatal.
+        _ = clipboard.SetTextAsync(text);
     }
 
     private void OnThemeToggle(object? sender, RoutedEventArgs e)

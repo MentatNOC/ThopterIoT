@@ -5,6 +5,7 @@ using Thopter.Discovery.Arp;
 using Thopter.Discovery.Identify;
 using Thopter.Discovery.Mdns;
 using Thopter.Discovery.Model;
+using Thopter.Discovery.Nbns;
 using Thopter.Discovery.Net;
 using Thopter.Discovery.Onvif;
 using Thopter.Discovery.Oui;
@@ -101,6 +102,10 @@ public sealed class DiscoveryEngine
             }
         }
 
+        // --- Stage D: NetBIOS name query for hosts still unnamed by the protocol layer ---
+        if (options.EnableNbns)
+            await ResolveNetbiosNamesAsync(registry, options.Nbns, progress, ct).ConfigureAwait(false);
+
         // --- Fusion: offline device type + model ---
         foreach (var device in registry.Values)
         {
@@ -166,6 +171,41 @@ public sealed class DiscoveryEngine
                 if (device.Vendor is null && !lookup.IsLocallyAdministered) device.Vendor = lookup.Vendor;
                 device.IsLocallyAdministered = lookup.IsLocallyAdministered;
                 if (lookup.Note is not null) device.Note ??= lookup.Note;
+                progress?.Report(device);
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Query every host we still have no hostname for with a NetBIOS node status request and
+    /// attach the machine name it advertises. On-LAN and unauthenticated; each target is gated
+    /// on <see cref="NetInfo.IsLanScannable"/> inside the resolver.
+    /// </summary>
+    private static async Task ResolveNetbiosNamesAsync(
+        Dictionary<string, DiscoveredDevice> registry, NbnsOptions options,
+        IProgress<DiscoveredDevice>? progress, CancellationToken ct)
+    {
+        var targets = registry.Values
+            .Where(d => d.Hostname is null)
+            .Select(d => d.PrimaryAddress)
+            .Where(NetInfo.IsLanScannable)
+            .Distinct()
+            .ToList();
+
+        if (targets.Count == 0) return;
+
+        var names = await new NbnsResolver().ResolveAsync(targets, options, ct).ConfigureAwait(false);
+        if (names.Count == 0) return;
+
+        foreach (var device in registry.Values)
+        {
+            if (device.Hostname is not null) continue;
+            foreach (var ip in device.Addresses)
+            {
+                if (!names.TryGetValue(ip, out var resolved)) continue;
+                device.Hostname ??= resolved;
+                device.Sources |= DiscoverySource.Nbns;
                 progress?.Report(device);
                 break;
             }
