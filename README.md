@@ -5,7 +5,7 @@
 
 ThopterIoT is a local scanner. It runs one-shot, reports what it finds, and stops. It never phones home. Everything it does is unauthenticated, standard, and one-shot - the kind of thing any device on the network already answers.
 
-> ThopterIoT is the free, open front door to [MentatNOC](https://mentatnoc.com) camera-fleet monitoring. The scanner is fully open source and self-contained; an optional paid connector (separate download) can send a scan's findings to the MentatNOC cloud for reports and monitoring. The open tool contains **no** cloud/monitoring code - see [The wall](#the-wall).
+> ThopterIoT is the free, open front door to [MentatNOC](https://mentatnoc.com) camera-fleet monitoring. The scanner is fully open source and self-contained; an optional paid connector (separate download) can send a scan's findings to the MentatNOC cloud for reports and monitoring. The open tool contains **no** cloud/monitoring code - see [what it does on your network](#what-it-does-on-your-network).
 
 ## What it finds
 
@@ -43,13 +43,20 @@ Add `--json` for machine-readable output.
 | `test/Thopter.Tests` | xUnit tests. |
 | `tools/update-oui` | Regenerates the embedded IEEE OUI table. |
 
-## The wall
+## What it does on your network
 
-ThopterIoT does **light identify only**. It is a hard, structural rule that the open tool contains no monitoring intellectual property and leaks nothing about how MentatNOC monitors:
+ThopterIoT does light identify only, and it never phones home. Every request it makes is unauthenticated and standard - the kind of thing a device already answers for anyone on the LAN:
 
-**Allowed** (unauthenticated, standard, one-shot): L2 MAC + IEEE OUI; ICMP reachability; ONVIF WS-Discovery scopes; SSDP + the device's own advertised description; mDNS PTR/SRV/TXT/A; NetBIOS node status (machine name, UDP 137); TCP connect open/closed; HTTP `Server` / `WWW-Authenticate`; TLS cert CN; RTSP `OPTIONS`.
+- L2 MAC + IEEE OUI vendor
+- ICMP reachability
+- ONVIF WS-Discovery scopes
+- SSDP, plus the description a device advertises about itself
+- mDNS PTR/SRV/TXT/A, and NetBIOS node status (UDP 137) for a machine name
+- TCP connect (open/closed) with light banners: HTTP `Server` / `WWW-Authenticate`, TLS certificate CN, RTSP `OPTIONS`
 
-**Never, in the open tool:** any authenticated call, any media (RTSP `DESCRIBE`/`PLAY`, snapshots, frames), any SNMP, any continuous observation (health, uptime, tamper, baselining, polling loops), any compliance logic, and **any telemetry / call-home / attestation**. The paid connector is a separate, out-of-process signed executable in a separate private repository; the dependency arrow only ever points private → public. CI enforces this (see `.github/workflows/ci.yml`).
+It never logs in, never pulls video (no RTSP `DESCRIBE` / `PLAY`, snapshots, or frames), never speaks SNMP, and never watches anything over time - it scans once and stops. There is no telemetry and no call-home.
+
+Reports, history, and fleet monitoring live in the optional MentatNOC connector, a separate download. This repository holds none of that code, and CI keeps it that way (`.github/workflows/ci.yml`).
 
 ## Build
 
