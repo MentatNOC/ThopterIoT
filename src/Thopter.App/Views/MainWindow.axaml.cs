@@ -1,10 +1,12 @@
 using System;
 using System.IO;
 using System.Text;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Styling;
 using Thopter.App.Export;
 using Thopter.App.ViewModels;
 
@@ -21,6 +23,17 @@ public partial class MainWindow : Window
     {
         if (DataContext is MainWindowViewModel vm && DeviceList.SelectedItem is DeviceRow row)
             vm.ShowDetail(row);
+    }
+
+    private void OnThemeToggle(object? sender, RoutedEventArgs e)
+    {
+        var app = Application.Current;
+        if (app is null)
+            return;
+
+        // Flip between the two brand palettes; DynamicResource brushes re-resolve live.
+        app.RequestedThemeVariant =
+            app.ActualThemeVariant == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;
     }
 
     private async void OnExportClick(object? sender, RoutedEventArgs e)

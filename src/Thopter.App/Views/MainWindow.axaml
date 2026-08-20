@@ -10,8 +10,8 @@
         x:CompileBindings="True"
         d:DesignWidth="1000" d:DesignHeight="700"
         Width="1000" Height="700"
-        Background="{StaticResource InkBrush}"
-        Foreground="{StaticResource BoneBrush}"
+        Background="{DynamicResource InkBrush}"
+        Foreground="{DynamicResource BoneBrush}"
         FontFamily="{StaticResource BrandFont}"
         FontSize="13"
         Title="ThopterIoT">
@@ -20,23 +20,10 @@
         <vm:MainWindowViewModel />
     </Design.DataContext>
 
-    <Window.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.ThemeDictionaries>
-                <ResourceDictionary x:Key="Light">
-                    <SolidColorBrush x:Key="DetailCardBrush" Color="#141416" />
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="Dark">
-                    <SolidColorBrush x:Key="DetailCardBrush" Color="#141416" />
-                </ResourceDictionary>
-            </ResourceDictionary.ThemeDictionaries>
-        </ResourceDictionary>
-    </Window.Resources>
-
     <Window.Styles>
         <!-- Discovered-via pills -->
         <Style Selector="Border.badge">
-            <Setter Property="Background" Value="#1AF4F1EA" />
+            <Setter Property="Background" Value="{DynamicResource BadgeBrush}" />
             <Setter Property="CornerRadius" Value="3" />
             <Setter Property="Padding" Value="5,1" />
             <Setter Property="Margin" Value="0,0,4,2" />
@@ -46,18 +33,33 @@
         </Style>
         <Style Selector="Border.badge TextBlock">
             <Setter Property="FontSize" Value="11" />
-            <Setter Property="Foreground" Value="#F4F1EA" />
+            <Setter Property="Foreground" Value="{DynamicResource BoneBrush}" />
         </Style>
         <Style Selector="Border.badge.accent TextBlock">
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
 
-        <!-- Row emphasis: dim unknown-vendor hosts; tint ONVIF-confirmed cameras sapho red -->
+        <!-- Row emphasis: dim unknown-vendor hosts; tint ONVIF-confirmed cameras -->
         <Style Selector="Border.rowroot.unknown">
-            <Setter Property="Opacity" Value="0.5" />
+            <Setter Property="Opacity" Value="0.55" />
         </Style>
         <Style Selector="Border.rowroot.onvif">
-            <Setter Property="Background" Value="#14C2342B" />
+            <Setter Property="Background" Value="{DynamicResource OnvifTintBrush}" />
+        </Style>
+
+        <!-- "Target acquired" reticle on camera rows: breathing corner brackets -->
+        <Style Selector="Grid.reticle">
+            <Style.Animations>
+                <Animation Duration="0:0:1.15" IterationCount="INFINITE" PlaybackDirection="Alternate" Easing="SineEaseInOut">
+                    <KeyFrame Cue="0%"><Setter Property="Opacity" Value="1.0" /></KeyFrame>
+                    <KeyFrame Cue="100%"><Setter Property="Opacity" Value="0.45" /></KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+        <Style Selector="Grid.reticle Path">
+            <Setter Property="Stroke" Value="{DynamicResource SaphoBrush}" />
+            <Setter Property="StrokeThickness" Value="1.6" />
+            <Setter Property="StrokeLineCap" Value="Round" />
         </Style>
 
         <!-- Stretch list rows so columns line up with the header -->
@@ -68,7 +70,7 @@
 
         <!-- Detail flyout key labels -->
         <Style Selector="TextBlock.detailkey">
-            <Setter Property="Foreground" Value="{StaticResource MuteBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource MuteBrush}" />
             <Setter Property="Margin" Value="0,0,12,2" />
         </Style>
         <Style Selector="TextBlock.detailval">
@@ -77,7 +79,7 @@
         </Style>
         <Style Selector="TextBlock.sectionhead">
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{StaticResource SaphoBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource SaphoBrush}" />
             <Setter Property="Margin" Value="0,10,0,3" />
         </Style>
     </Window.Styles>
@@ -88,18 +90,29 @@
         <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" Margin="14">
 
             <!-- Brand header -->
-            <Border Grid.Row="0" BorderBrush="{StaticResource HairlineStrongBrush}"
+            <Border Grid.Row="0" BorderBrush="{DynamicResource HairlineStrongBrush}"
                     BorderThickness="0,0,0,1" Padding="0,0,0,9" Margin="0,0,0,11">
                 <Grid ColumnDefinitions="Auto,*,Auto">
                     <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
-                        <Border Width="11" Height="11" Background="{StaticResource SaphoBrush}" CornerRadius="2" />
+                        <Border Width="11" Height="11" Background="{DynamicResource SaphoBrush}" CornerRadius="2" />
                         <TextBlock Text="ThopterIoT" FontWeight="Bold" FontSize="17" VerticalAlignment="Center" />
-                        <TextBlock Text="local IoT + camera discovery" Foreground="{StaticResource MuteBrush}"
-                                   FontSize="12" VerticalAlignment="Center" />
+                        <TextBlock Text="local IoT + camera discovery" Foreground="{DynamicResource MuteBrush}"
+                                   FontWeight="Medium" FontSize="12" VerticalAlignment="Center" />
                     </StackPanel>
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="by Mentat" Foreground="{StaticResource MuteBrush}" FontSize="12" />
-                        <TextBlock Text="NOC" Foreground="{StaticResource SaphoBrush}" FontSize="12" FontWeight="SemiBold" />
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="by Mentat" Foreground="{DynamicResource MuteBrush}" FontWeight="Medium" FontSize="12" />
+                            <TextBlock Text="NOC" Foreground="{DynamicResource SaphoBrush}" FontWeight="SemiBold" FontSize="12" />
+                        </StackPanel>
+                        <Button x:Name="ThemeToggle" Click="OnThemeToggle"
+                                Background="Transparent" BorderThickness="0" Padding="4"
+                                Width="30" Height="30" VerticalAlignment="Center"
+                                ToolTip.Tip="Toggle light / dark">
+                            <Grid Width="16" Height="16">
+                                <Ellipse Width="16" Height="16" Stroke="{DynamicResource BoneBrush}" StrokeThickness="1.4" />
+                                <Path Data="M8,1 A7,7 0 0 1 8,15 Z" Fill="{DynamicResource BoneBrush}" />
+                            </Grid>
+                        </Button>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -117,19 +130,17 @@
                          IsEnabled="{Binding !IsScanning}"
                          Width="150"
                          VerticalAlignment="Center" />
-                <Button Content="Scan" Command="{Binding ScanCommand}" IsDefault="True"
-                        Classes="accent" />
+                <Button Content="Scan" Command="{Binding ScanCommand}" IsDefault="True" Classes="accent" />
                 <Button Content="Cancel" Command="{Binding CancelCommand}" />
-                <Button x:Name="ExportButton" Content="Export…"
-                        Click="OnExportClick"
+                <Button x:Name="ExportButton" Content="Export…" Click="OnExportClick"
                         IsEnabled="{Binding HasResults}" />
             </StackPanel>
 
             <!-- Device list: header row + ListBox sharing the same column grid -->
             <Grid Grid.Row="2" RowDefinitions="Auto,*">
 
-                <Border Grid.Row="0" Background="{StaticResource InkRaiseBrush}"
-                        BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,0,0,1" Padding="8,5">
+                <Border Grid.Row="0" Background="{DynamicResource InkRaiseBrush}"
+                        BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,0,0,1" Padding="8,5">
                     <Grid ColumnDefinitions="140,165,190,110,175,*">
                         <TextBlock Grid.Column="0" Text="IP" FontWeight="Bold" />
                         <TextBlock Grid.Column="1" Text="MAC" FontWeight="Bold" />
@@ -151,29 +162,39 @@
                                     Classes.unknown="{Binding IsUnknownVendor}"
                                     Classes.onvif="{Binding IsOnvifConfirmed}"
                                     Padding="8,4">
-                                <Grid ColumnDefinitions="140,165,190,110,175,*">
-                                    <TextBlock Grid.Column="0" Text="{Binding Ip}" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="1" Text="{Binding Mac}" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="2" Text="{Binding Vendor}" VerticalAlignment="Center"
-                                               TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Grid.Column="3" Text="{Binding Type}" VerticalAlignment="Center" />
-                                    <ItemsControl Grid.Column="4" ItemsSource="{Binding SourceBadges}"
-                                                  VerticalAlignment="Center">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <WrapPanel />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate x:DataType="vm:SourceBadge">
-                                                <Border Classes="badge" Classes.accent="{Binding Accent}">
-                                                    <TextBlock Text="{Binding Text}" />
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                    <TextBlock Grid.Column="5" Text="{Binding Ports}" VerticalAlignment="Center"
-                                               TextTrimming="CharacterEllipsis" />
+                                <Grid>
+                                    <Grid ColumnDefinitions="140,165,190,110,175,*">
+                                        <TextBlock Grid.Column="0" Text="{Binding Ip}" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Mac}" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="2" Text="{Binding Vendor}" VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Grid.Column="3" Text="{Binding Type}" VerticalAlignment="Center" />
+                                        <ItemsControl Grid.Column="4" ItemsSource="{Binding SourceBadges}" VerticalAlignment="Center">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:SourceBadge">
+                                                    <Border Classes="badge" Classes.accent="{Binding Accent}">
+                                                        <TextBlock Text="{Binding Text}" />
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <TextBlock Grid.Column="5" Text="{Binding Ports}" VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </Grid>
+
+                                    <!-- Camera lock-on reticle: corner brackets, shown only for ONVIF-confirmed cameras -->
+                                    <Grid Classes="reticle" IsHitTestVisible="False"
+                                          IsVisible="{Binding IsOnvifConfirmed}" Margin="-4,-2">
+                                        <Path HorizontalAlignment="Left"  VerticalAlignment="Top"    Data="M0,11 L0,0 L11,0" />
+                                        <Path HorizontalAlignment="Right" VerticalAlignment="Top"    Data="M0,0 L11,0 L11,11" />
+                                        <Path HorizontalAlignment="Left"  VerticalAlignment="Bottom" Data="M0,0 L0,11 L11,11" />
+                                        <Path HorizontalAlignment="Right" VerticalAlignment="Bottom" Data="M11,0 L11,11 L0,11" />
+                                    </Grid>
                                 </Grid>
                             </Border>
                         </DataTemplate>
@@ -186,21 +207,21 @@
                 <ProgressBar Minimum="0" Maximum="100"
                              Value="{Binding ProgressValue}"
                              IsIndeterminate="{Binding IsProgressIndeterminate}"
-                             Foreground="{StaticResource SaphoBrush}"
+                             Foreground="{DynamicResource SaphoBrush}"
                              Height="3" />
-                <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource MuteBrush}" />
+                <TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource MuteBrush}" FontWeight="Medium" />
             </StackPanel>
 
             <!-- Upgrade panel: visually separated, inert CTA -->
-            <Border Grid.Row="4" Background="{StaticResource InkRaiseBrush}"
-                    BorderBrush="{StaticResource HairlineStrongBrush}" BorderThickness="1"
+            <Border Grid.Row="4" Background="{DynamicResource InkRaiseBrush}"
+                    BorderBrush="{DynamicResource HairlineStrongBrush}" BorderThickness="1"
                     CornerRadius="5" Padding="0">
                 <Grid ColumnDefinitions="Auto,*,Auto">
-                    <Border Grid.Column="0" Width="3" Background="{StaticResource SaphoBrush}" />
+                    <Border Grid.Column="0" Width="3" Background="{DynamicResource SaphoBrush}" />
                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="14,12">
                         <TextBlock Text="Get reports + monitoring with MentatNOC" FontWeight="SemiBold" />
                         <TextBlock Text="ThopterIoT scans locally and stores nothing. Upgrade to keep history, generate reports, and monitor your fleet."
-                                   Foreground="{StaticResource MuteBrush}" FontSize="12" TextWrapping="Wrap" />
+                                   Foreground="{DynamicResource MuteBrush}" FontWeight="Medium" FontSize="12" TextWrapping="Wrap" />
                     </StackPanel>
                     <Button Grid.Column="2" Content="Upgrade" Command="{Binding UpgradeCommand}"
                             Classes="accent" VerticalAlignment="Center" Margin="0,0,14,0" />
@@ -210,26 +231,22 @@
         </Grid>
 
         <!-- Detail flyout overlay (double-click a row) -->
-        <Border IsVisible="{Binding IsDetailOpen}"
-                Background="#B3000000">
-            <Border MaxWidth="640" MaxHeight="580"
-                    Margin="24"
+        <Border IsVisible="{Binding IsDetailOpen}" Background="#B3000000">
+            <Border MaxWidth="640" MaxHeight="580" Margin="24"
                     HorizontalAlignment="Center" VerticalAlignment="Center"
                     Background="{DynamicResource DetailCardBrush}"
-                    BorderBrush="{StaticResource HairlineStrongBrush}" BorderThickness="1"
-                    CornerRadius="8" Padding="18"
-                    BoxShadow="0 10 30 0 #99000000">
+                    BorderBrush="{DynamicResource HairlineStrongBrush}" BorderThickness="1"
+                    CornerRadius="8" Padding="18" BoxShadow="0 10 30 0 #99000000">
                 <Grid RowDefinitions="Auto,*">
 
                     <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,4">
-                        <Border Grid.Column="0" Width="4" Background="{StaticResource SaphoBrush}"
+                        <Border Grid.Column="0" Width="4" Background="{DynamicResource SaphoBrush}"
                                 CornerRadius="2" Margin="0,2,12,2" />
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="{Binding SelectedDetail.Title}" FontSize="20" FontWeight="Bold" />
-                            <TextBlock Text="{Binding SelectedDetail.Subtitle}" Foreground="{StaticResource MuteBrush}" />
+                            <TextBlock Text="{Binding SelectedDetail.Subtitle}" Foreground="{DynamicResource MuteBrush}" />
                         </StackPanel>
-                        <Button Grid.Column="2" Content="Close" Command="{Binding CloseDetailCommand}"
-                                VerticalAlignment="Top" />
+                        <Button Grid.Column="2" Content="Close" Command="{Binding CloseDetailCommand}" VerticalAlignment="Top" />
                     </Grid>
 
                     <ScrollViewer Grid.Row="1" Margin="0,8,0,0">
@@ -249,65 +266,43 @@
                                 <TextBlock Grid.Row="5" Grid.Column="1" Classes="detailval" Text="{Binding SelectedDetail.Sources}" />
                             </Grid>
 
-                            <TextBlock Classes="sectionhead" Text="Addresses"
-                                       IsVisible="{Binding SelectedDetail.HasAddresses}" />
-                            <ItemsControl ItemsSource="{Binding SelectedDetail.Addresses}"
-                                          IsVisible="{Binding SelectedDetail.HasAddresses}">
+                            <TextBlock Classes="sectionhead" Text="Addresses" IsVisible="{Binding SelectedDetail.HasAddresses}" />
+                            <ItemsControl ItemsSource="{Binding SelectedDetail.Addresses}" IsVisible="{Binding SelectedDetail.HasAddresses}">
                                 <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="sys:String">
-                                        <TextBlock Text="{Binding}" />
-                                    </DataTemplate>
+                                    <DataTemplate x:DataType="sys:String"><TextBlock Text="{Binding}" /></DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
-                            <TextBlock Classes="sectionhead" Text="Open ports"
-                                       IsVisible="{Binding SelectedDetail.HasPorts}" />
-                            <ItemsControl ItemsSource="{Binding SelectedDetail.Ports}"
-                                          IsVisible="{Binding SelectedDetail.HasPorts}">
+                            <TextBlock Classes="sectionhead" Text="Open ports" IsVisible="{Binding SelectedDetail.HasPorts}" />
+                            <ItemsControl ItemsSource="{Binding SelectedDetail.Ports}" IsVisible="{Binding SelectedDetail.HasPorts}">
                                 <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="sys:String">
-                                        <TextBlock Text="{Binding}" TextWrapping="Wrap" />
-                                    </DataTemplate>
+                                    <DataTemplate x:DataType="sys:String"><TextBlock Text="{Binding}" TextWrapping="Wrap" /></DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
-                            <TextBlock Classes="sectionhead" Text="ONVIF scopes"
-                                       IsVisible="{Binding SelectedDetail.HasOnvifScopes}" />
-                            <ItemsControl ItemsSource="{Binding SelectedDetail.OnvifScopes}"
-                                          IsVisible="{Binding SelectedDetail.HasOnvifScopes}">
+                            <TextBlock Classes="sectionhead" Text="ONVIF scopes" IsVisible="{Binding SelectedDetail.HasOnvifScopes}" />
+                            <ItemsControl ItemsSource="{Binding SelectedDetail.OnvifScopes}" IsVisible="{Binding SelectedDetail.HasOnvifScopes}">
                                 <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="sys:String">
-                                        <TextBlock Text="{Binding}" TextWrapping="Wrap" />
-                                    </DataTemplate>
+                                    <DataTemplate x:DataType="sys:String"><TextBlock Text="{Binding}" TextWrapping="Wrap" /></DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
-                            <TextBlock Classes="sectionhead" Text="mDNS services"
-                                       IsVisible="{Binding SelectedDetail.HasMdnsServices}" />
-                            <ItemsControl ItemsSource="{Binding SelectedDetail.MdnsServices}"
-                                          IsVisible="{Binding SelectedDetail.HasMdnsServices}">
+                            <TextBlock Classes="sectionhead" Text="mDNS services" IsVisible="{Binding SelectedDetail.HasMdnsServices}" />
+                            <ItemsControl ItemsSource="{Binding SelectedDetail.MdnsServices}" IsVisible="{Binding SelectedDetail.HasMdnsServices}">
                                 <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="sys:String">
-                                        <TextBlock Text="{Binding}" TextWrapping="Wrap" />
-                                    </DataTemplate>
+                                    <DataTemplate x:DataType="sys:String"><TextBlock Text="{Binding}" TextWrapping="Wrap" /></DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
-                            <TextBlock Classes="sectionhead" Text="Attributes"
-                                       IsVisible="{Binding SelectedDetail.HasAttributes}" />
-                            <ItemsControl ItemsSource="{Binding SelectedDetail.Attributes}"
-                                          IsVisible="{Binding SelectedDetail.HasAttributes}">
+                            <TextBlock Classes="sectionhead" Text="Attributes" IsVisible="{Binding SelectedDetail.HasAttributes}" />
+                            <ItemsControl ItemsSource="{Binding SelectedDetail.Attributes}" IsVisible="{Binding SelectedDetail.HasAttributes}">
                                 <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="sys:String">
-                                        <TextBlock Text="{Binding}" TextWrapping="Wrap" />
-                                    </DataTemplate>
+                                    <DataTemplate x:DataType="sys:String"><TextBlock Text="{Binding}" TextWrapping="Wrap" /></DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
-                            <TextBlock Classes="sectionhead" Text="Note"
-                                       IsVisible="{Binding SelectedDetail.HasNote}" />
-                            <TextBlock Text="{Binding SelectedDetail.Note}" TextWrapping="Wrap"
-                                       IsVisible="{Binding SelectedDetail.HasNote}" />
+                            <TextBlock Classes="sectionhead" Text="Note" IsVisible="{Binding SelectedDetail.HasNote}" />
+                            <TextBlock Text="{Binding SelectedDetail.Note}" TextWrapping="Wrap" IsVisible="{Binding SelectedDetail.HasNote}" />
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
