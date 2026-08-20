@@ -24,6 +24,13 @@
     <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
+    <!-- Avalonia 11.1.5's own binding converter (TargetTypeConverter.DefaultConverter.TryConvert,
+         via TypeDescriptor.GetConverter) isn't fully trim/AOT-clean yet. These three diagnostics
+         originate inside Avalonia.Base/Avalonia.Win32, not our code, so they can't be fixed here -
+         demote them back to warnings instead of failing the AOT publish. Remove this once Avalonia
+         ships a clean build for this codepath. -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);IL2026;IL2104;IL3053</WarningsNotAsErrors>
+
     <Description>ThopterIoT desktop GUI - local-network IoT/IP-camera discovery scanner (free, open-core front end for MentatNOC).</Description>
   </PropertyGroup>
 
