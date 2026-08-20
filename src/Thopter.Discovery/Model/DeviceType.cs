@@ -2,7 +2,7 @@ namespace Thopter.Discovery.Model;
 
 /// <summary>
 /// Coarse device classification produced by the offline, rule-based identifier.
-/// Deliberately shallow — deep classification is not part of the open tool.
+/// Deliberately shallow - deep classification is not part of the open tool.
 /// </summary>
 public enum DeviceType
 {

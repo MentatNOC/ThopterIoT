@@ -32,7 +32,7 @@ artifacts/
 *.coveragexml
 coverage/
 
-# OUI raw CSVs are NOT committed — only the generated oui.tsv is embedded.
+# OUI raw CSVs are NOT committed - only the generated oui.tsv is embedded.
 tools/update-oui/raw/
 **/mal.csv
 **/mam.csv
@@ -42,5 +42,5 @@ tools/update-oui/raw/
 Thumbs.db
 .DS_Store
 
-# Internal build blueprint — kept locally, NOT published.
+# Internal build blueprint - kept locally, NOT published.
 /BUILD-SPEC.md

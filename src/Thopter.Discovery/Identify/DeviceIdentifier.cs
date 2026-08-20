@@ -8,7 +8,7 @@ namespace Thopter.Discovery.Identify;
 /// SSDP/mDNS advertisements, open ports and light banners) into a type + best model.
 ///
 /// Guardrail: a device type is asserted only from a strong signal (an ONVIF WS-Discovery
-/// response) or from at least two independent corroborating signals — never from one weak hint.
+/// response) or from at least two independent corroborating signals - never from one weak hint.
 /// </summary>
 public static class DeviceIdentifier
 {
@@ -52,7 +52,7 @@ public static class DeviceIdentifier
             "onvif.hardware", "upnp.modelName", "mdns.txt.md", "upnp.modelNumber");
         if (model is not null) device.Model = model;
 
-        // 1b. On a routed scan there's no OUI vendor — try to recover it from web-server banners.
+        // 1b. On a routed scan there's no OUI vendor - try to recover it from web-server banners.
         EnrichVendorFromBanner(device);
 
         // 2. Gather independent signals.
@@ -75,7 +75,7 @@ public static class DeviceIdentifier
         int cameraSignals = (rtspOpen ? 1 : 0) + (vendorCam ? 1 : 0) + (mdnsCam ? 1 : 0) + (httpCam ? 1 : 0);
 
         // An RTSP endpoint that actually spoke RTSP, alongside a web UI, is unmistakably a
-        // camera/encoder/NVR — the routed-scan equivalent of a strong signal.
+        // camera/encoder/NVR - the routed-scan equivalent of a strong signal.
         bool cameraByRtsp = rtspSpoke && (webOpen || vendorCam || httpCam || mdnsCam);
 
         bool printer = device.MdnsServices.Any(s =>

@@ -71,7 +71,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     public bool IsDetailOpen => SelectedDetail is not null;
 
-    /// <summary>True once at least one device has been found — gates the Export button.</summary>
+    /// <summary>True once at least one device has been found - gates the Export button.</summary>
     public bool HasResults => Devices.Count > 0;
 
     public IReadOnlyList<DiscoveredDevice> DevicesForExport => Devices.Select(r => r.Device).ToList();
@@ -151,13 +151,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private void Upgrade()
     {
         // Inert CTA: just opens the marketing page. No connector, no license flow, no
-        // cloud call in this project — that logic lives only in the private connector repo.
+        // cloud call in this project - that logic lives only in the private connector repo.
         Process.Start(new ProcessStartInfo { FileName = UpgradeUrl, UseShellExecute = true });
     }
 
     /// <summary>
     /// Build scan options from the UI: a validated manual CIDR takes precedence, else the
-    /// selected interface. A manual CIDR must resolve to a private/link-local range — the
+    /// selected interface. A manual CIDR must resolve to a private/link-local range - the
     /// open tool never scans public address space.
     /// </summary>
     private bool TryBuildOptions(out DiscoveryOptions options, out string label, out string? error)
@@ -206,7 +206,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         int prefix = 24;
         if (slash >= 0 && (!int.TryParse(input.AsSpan(slash + 1), out prefix) || prefix is < 0 or > 32))
         {
-            error = "Invalid prefix length — use 0 to 32.";
+            error = "Invalid prefix length - use 0 to 32.";
             return false;
         }
 

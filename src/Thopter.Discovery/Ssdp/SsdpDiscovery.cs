@@ -10,7 +10,7 @@ namespace Thopter.Discovery.Ssdp;
 /// SSDP discovery: an HTTP-over-UDP M-SEARCH to 239.255.255.250:1900, dedupe replies by
 /// source IP, and (optionally) GET the device's own advertised LOCATION description for
 /// friendlyName / manufacturer / modelName. The LOCATION fetch goes only to LAN addresses
-/// (HttpLite enforces that). We read only what the device advertises — never authenticate.
+/// (HttpLite enforces that). We read only what the device advertises - never authenticate.
 /// </summary>
 public sealed class SsdpDiscovery
 {
@@ -109,7 +109,7 @@ public sealed class SsdpDiscovery
                 if (modelNumber is not null) finding.Attributes["upnp.modelNumber"] = modelNumber;
             }
         }
-        catch { /* not valid UPnP XML — keep the header-level evidence */ }
+        catch { /* not valid UPnP XML - keep the header-level evidence */ }
     }
 
     private static ProtocolFinding GetOrCreate(Dictionary<IPAddress, ProtocolFinding> map, IPAddress ip)
@@ -140,7 +140,7 @@ public sealed class SsdpDiscovery
         var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         string text = Encoding.Latin1.GetString(data);
         var lines = text.Split("\r\n");
-        // lines[0] is the status/request line (HTTP/1.1 200 OK or NOTIFY) — skip it.
+        // lines[0] is the status/request line (HTTP/1.1 200 OK or NOTIFY) - skip it.
         for (int i = 1; i < lines.Length; i++)
         {
             int colon = lines[i].IndexOf(':');

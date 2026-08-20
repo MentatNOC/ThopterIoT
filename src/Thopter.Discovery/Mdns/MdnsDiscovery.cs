@@ -7,7 +7,7 @@ namespace Thopter.Discovery.Mdns;
 /// <summary>
 /// mDNS / DNS-SD discovery probe (RFC 6762/6763, UDP 5353). Sends the DNS-SD service-
 /// enumeration meta-query plus a fixed list of camera/device-relevant service-type PTR
-/// queries — all marked QU (unicast-response requested) — and folds whatever comes back
+/// queries - all marked QU (unicast-response requested) - and folds whatever comes back
 /// into one <see cref="ProtocolFinding"/> per responding IP. Unauthenticated, one-shot,
 /// no reflection, no external library: the wire format is hand-decoded by <see cref="DnsMessage"/>.
 /// </summary>
@@ -36,7 +36,7 @@ public sealed class MdnsDiscovery
         "_hap._tcp.local",
     };
 
-    /// <summary>TXT keys worth surfacing as attributes — kept short on purpose, not the whole packet.</summary>
+    /// <summary>TXT keys worth surfacing as attributes - kept short on purpose, not the whole packet.</summary>
     private static readonly string[] InterestingTxtKeys =
     {
         "md", "fn", "ty", "model", "vendor", "manufacturer", "product", "id", "usb_mdl", "usb_mfg",
@@ -65,7 +65,7 @@ public sealed class MdnsDiscovery
             ct.ThrowIfCancellationRequested();
 
             if (!DnsMessage.TryParse(reply.Data, out var msg) || msg.Records.Count == 0)
-                continue; // malformed / empty datagram — skip it, not the whole probe
+                continue; // malformed / empty datagram - skip it, not the whole probe
 
             if (!byAddress.TryGetValue(reply.From, out var finding))
             {
@@ -106,7 +106,7 @@ public sealed class MdnsDiscovery
                     break;
 
                 case DnsType.SRV when record.Srv is { } srv:
-                    // The SRV owner name is "<instance>._service._proto.local" — the service
+                    // The SRV owner name is "<instance>._service._proto.local" - the service
                     // type is the last two labels before the domain.
                     AddService(finding, ServiceTypeFromOwnerName(record.Name));
                     if (finding.Hostname is null && !string.IsNullOrEmpty(srv.Target))
@@ -140,7 +140,7 @@ public sealed class MdnsDiscovery
         foreach (var entry in txt)
         {
             int eq = entry.IndexOf('=');
-            if (eq <= 0) continue; // boolean flag string (no '=') or empty key — nothing to attribute
+            if (eq <= 0) continue; // boolean flag string (no '=') or empty key - nothing to attribute
             string value = entry[(eq + 1)..];
             if (value.Length == 0) continue;
 

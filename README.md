@@ -1,15 +1,15 @@
 <!-- markdownlint-disable MD013 MD033 -->
 # ThopterIoT
 
-**A free, open-source Windows tool that discovers the IoT devices and IP cameras on a local network — IP, MAC + vendor (OUI), and the standard discovery protocols they speak — with no driver, no admin rights, and no telemetry.**
+**A free, open-source Windows tool that discovers the IoT devices and IP cameras on a local network - IP, MAC + vendor (OUI), and the standard discovery protocols they speak - with no driver, no admin rights, and no telemetry.**
 
-ThopterIoT is a local scanner. It runs one-shot, reports what it finds, and stops. It never phones home. Everything it does is unauthenticated, standard, and one-shot — the kind of thing any device on the network already answers.
+ThopterIoT is a local scanner. It runs one-shot, reports what it finds, and stops. It never phones home. Everything it does is unauthenticated, standard, and one-shot - the kind of thing any device on the network already answers.
 
-> ThopterIoT is the free, open front door to [MentatNOC](https://mentatnoc.com) camera-fleet monitoring. The scanner is fully open source and self-contained; an optional paid connector (separate download) can send a scan's findings to the MentatNOC cloud for reports and monitoring. The open tool contains **no** cloud/monitoring code — see [The wall](#the-wall).
+> ThopterIoT is the free, open front door to [MentatNOC](https://mentatnoc.com) camera-fleet monitoring. The scanner is fully open source and self-contained; an optional paid connector (separate download) can send a scan's findings to the MentatNOC cloud for reports and monitoring. The open tool contains **no** cloud/monitoring code - see [The wall](#the-wall).
 
 ## What it finds
 
-- **Every host with a MAC**, driver-free — a ping sweep seeds the OS ARP cache, then the IPv4 neighbor table is read via the in-box IP Helper API (`GetIpNetTable2`). No Npcap, no raw sockets, no elevation.
+- **Every host with a MAC**, driver-free - a ping sweep seeds the OS ARP cache, then the IPv4 neighbor table is read via the in-box IP Helper API (`GetIpNetTable2`). No Npcap, no raw sockets, no elevation.
 - **The vendor for each MAC**, offline, via the embedded IEEE OUI registry (MA-L/MA-M/MA-S, longest-prefix match). Locally-administered / randomized MACs are flagged as such.
 - *(coming in the protocol layer)* ONVIF WS-Discovery, SSDP, mDNS/DNS-SD, and a light TCP port/banner scan, fused into an offline device type/model guess.
 

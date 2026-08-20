@@ -7,7 +7,7 @@ namespace Thopter.App.ViewModels;
 /// <summary>
 /// Read-only snapshot of one device's full evidence, shown in the detail flyout on
 /// double-click. Everything is pre-formatted to plain strings so the view is simple
-/// ItemsControls with compiled bindings — no converters, no reflection.
+/// ItemsControls with compiled bindings - no converters, no reflection.
 /// </summary>
 public sealed class DeviceDetail
 {
@@ -46,12 +46,12 @@ public sealed class DeviceDetail
             d.Vendor,
         }.Where(s => !string.IsNullOrEmpty(s)));
 
-        Mac = d.MacString ?? "—";
-        Vendor = d.Vendor ?? "—";
+        Mac = d.MacString ?? "-";
+        Vendor = d.Vendor ?? "-";
         Type = d.Type.ToString();
-        Model = d.Model ?? "—";
-        Hostname = d.Hostname ?? "—";
-        Sources = d.Sources == DiscoverySource.None ? "—" : d.Sources.ToString();
+        Model = d.Model ?? "-";
+        Hostname = d.Hostname ?? "-";
+        Sources = d.Sources == DiscoverySource.None ? "-" : d.Sources.ToString();
         MacKind = d.IsLocallyAdministered ? "locally administered (randomized / virtual)" : "universal (real OUI)";
 
         Addresses = d.Addresses.Select(a => a.ToString()).ToList();
@@ -71,6 +71,6 @@ public sealed class DeviceDetail
     private static string FormatPort(OpenPort p)
     {
         string head = p.Service is null ? p.Port.ToString() : $"{p.Port}/{p.Service}";
-        return p.Banner is null ? head : $"{head}  —  {p.Banner}";
+        return p.Banner is null ? head : $"{head}  -  {p.Banner}";
     }
 }

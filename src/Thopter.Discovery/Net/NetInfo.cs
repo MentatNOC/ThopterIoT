@@ -61,7 +61,7 @@ public static class NetInfo
 
             int ifIndex = -1;
             try { ifIndex = props.GetIPv4Properties()?.Index ?? -1; }
-            catch (NetworkInformationException) { /* IPv4 disabled on this NIC — leave -1 */ }
+            catch (NetworkInformationException) { /* IPv4 disabled on this NIC - leave -1 */ }
 
             IPAddress? gateway = props.GatewayAddresses
                 .Select(g => g.Address)
@@ -124,7 +124,7 @@ public static class NetInfo
     }
 
     /// <summary>
-    /// Index of the interface the OS routes internet-bound traffic out of — i.e. the real
+    /// Index of the interface the OS routes internet-bound traffic out of - i.e. the real
     /// default-route uplink, chosen by the OS's own metric logic (route + interface metric).
     /// Returns null if it can't be determined. Pure local routing-table lookup: opens no
     /// socket and sends nothing.
@@ -209,7 +209,7 @@ public static class NetInfo
 
     /// <summary>
     /// True for addresses the tool is permitted to talk to: RFC1918 private, 169.254/16
-    /// link-local, or loopback. Everything else (public/internet) is refused — this is
+    /// link-local, or loopback. Everything else (public/internet) is refused - this is
     /// the egress guard from the open-core wall.
     /// </summary>
     public static bool IsLanScannable(IPAddress address)

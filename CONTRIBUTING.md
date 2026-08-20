@@ -1,7 +1,7 @@
 # Contributing to ThopterIoT
 
 Thanks for helping. ThopterIoT is [Apache-2.0](LICENSE) licensed and uses the
-**Developer Certificate of Origin (DCO)** — not a CLA.
+**Developer Certificate of Origin (DCO)** - not a CLA.
 
 ## Developer Certificate of Origin
 
@@ -36,7 +36,7 @@ only**. In short:
 
 CI enforces this (`tools/wall-check/Check-Wall.ps1` and the `WallCheck` test category).
 PRs that add outbound network egress, monitoring semantics, or cloud/connector code to
-the open repo will be declined — that work belongs in the separate private connector.
+the open repo will be declined - that work belongs in the separate private connector.
 
 ## Building and testing
 

@@ -8,14 +8,14 @@ namespace Thopter.Discovery.Model;
 /// registry (by matching IP), then <c>DeviceIdentifier</c> fuses them into a verdict.
 ///
 /// Everything here is unauthenticated, standard, one-shot data. No media, no auth, no
-/// continuous observation — that is the open-core wall.
+/// continuous observation - that is the open-core wall.
 /// </summary>
 public sealed class ProtocolFinding
 {
     public required IPAddress Address { get; init; }
     public required DiscoverySource Source { get; init; }
 
-    /// <summary>Vendor as advertised by the protocol (SSDP manufacturer, ONVIF name, etc.) — not the OUI vendor.</summary>
+    /// <summary>Vendor as advertised by the protocol (SSDP manufacturer, ONVIF name, etc.) - not the OUI vendor.</summary>
     public string? Vendor { get; set; }
 
     /// <summary>Model/hardware string from an unauthenticated field (ONVIF hardware scope, SSDP modelName, mDNS md=).</summary>

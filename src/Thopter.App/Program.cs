@@ -13,8 +13,8 @@ namespace Thopter.App;
 
 /// <summary>
 /// Entry point. Dual mode:
-///  * <c>Thopter.App.exe scan [--json]</c> — headless console scan, no Avalonia loaded.
-///  * anything else — the normal Avalonia desktop GUI.
+///  * <c>Thopter.App.exe scan [--json]</c> - headless console scan, no Avalonia loaded.
+///  * anything else - the normal Avalonia desktop GUI.
 /// </summary>
 internal static class Program
 {

@@ -15,7 +15,7 @@ internal sealed record HttpLiteResponse(
 /// Minimal, dependency-free HTTP/1.1 client over a raw socket, used only to read a
 /// device's own unauthenticated, advertised pages (SSDP LOCATION XML, HTTP Server
 /// header, TLS cert CN). It has NO System.Net.Http reference and, critically, it
-/// <b>refuses any destination that is not on the local network</b> — that is the
+/// <b>refuses any destination that is not on the local network</b> - that is the
 /// egress guard from the open-core wall, enforced in code.
 /// </summary>
 internal static class HttpLite

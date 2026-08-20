@@ -10,7 +10,7 @@ namespace Thopter.Cloud.Abstractions
     ///
     /// Contract guarantees that keep the wall intact:
     ///  * The request type (<see cref="FindingsBatch"/>) is commodity data only.
-    ///  * The response type (<see cref="SubmitResult"/>) is deliberately opaque — no
+    ///  * The response type (<see cref="SubmitResult"/>) is deliberately opaque - no
     ///    monitoring schema may leak into this assembly.
     ///  * A sink must refuse to send when it is not configured (no silent call-home).
     /// </summary>
@@ -21,7 +21,7 @@ namespace Thopter.Cloud.Abstractions
 
         /// <summary>
         /// True only once a real endpoint/license is present. The open app must refuse
-        /// to submit while this is false — that is the no-call-home guarantee.
+        /// to submit while this is false - that is the no-call-home guarantee.
         /// </summary>
         bool IsConfigured { get; }
 
@@ -47,7 +47,7 @@ namespace Thopter.Cloud.Abstractions
     }
 
     /// <summary>
-    /// Opaque result of a submit. Carries only what the app needs to hand the user a link —
+    /// Opaque result of a submit. Carries only what the app needs to hand the user a link -
     /// no report structure, no monitoring data. This opacity is a wall requirement.
     /// </summary>
     public sealed class SubmitResult

@@ -24,7 +24,7 @@
     <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
-    <Description>ThopterIoT desktop GUI — local-network IoT/IP-camera discovery scanner (free, open-core front end for MentatNOC).</Description>
+    <Description>ThopterIoT desktop GUI - local-network IoT/IP-camera discovery scanner (free, open-core front end for MentatNOC).</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -38,7 +38,7 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.5" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.1.5" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <!-- Avalonia XAML diagnostics overlay (Alt+Shift+F12) — Debug-only, not shipped in Release. -->
+    <!-- Avalonia XAML diagnostics overlay (Alt+Shift+F12) - Debug-only, not shipped in Release. -->
     <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.1.5" />
     <!-- Security: override Avalonia's transitive Tmds.DBus.Protocol (0.16.0, GHSA-xrw6-gwf8-vvr9)
          with a patched build. It's Linux D-Bus support only and never loads on Windows, but we

@@ -41,18 +41,18 @@ packages and are reproduced in the published build's licenses folder.
 | CommunityToolkit.Mvvm | MIT | https://github.com/CommunityToolkit/dotnet |
 
 `Thopter.Discovery` and `Thopter.Cloud.Abstractions` have **no third-party runtime
-package dependencies** — they use only the .NET base class library.
+package dependencies** - they use only the .NET base class library.
 
 ---
 
-## 3. Reference material — learned-from, NOT included
+## 3. Reference material - learned-from, NOT included
 
 The following projects were studied for architecture and technique only. **No code
 from any of them is copied, forked, linked, or bundled into ThopterIoT.** They are
 listed for transparency; none of their licenses apply to this repository.
 
-- **iot-inspector-client** (Apache-2.0) — discovery architecture reference.
-- **iot-risk-detect** (no license / all rights reserved) — concept reference only.
-- **LibreNMS** (GPLv3) — SNMP/auto-discovery data-model concepts only; no code used.
-- **Nmap** (NPSL) — host-discovery and service-fingerprint *techniques* only; no Nmap
+- **iot-inspector-client** (Apache-2.0) - discovery architecture reference.
+- **iot-risk-detect** (no license / all rights reserved) - concept reference only.
+- **LibreNMS** (GPLv3) - SNMP/auto-discovery data-model concepts only; no code used.
+- **Nmap** (NPSL) - host-discovery and service-fingerprint *techniques* only; no Nmap
   code, binary, or service-probe database is copied or bundled.

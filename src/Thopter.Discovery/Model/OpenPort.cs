@@ -11,7 +11,7 @@ public sealed class OpenPort
     /// <summary>Best-guess service label, e.g. "http", "https", "rtsp". Never a login.</summary>
     public string? Service { get; init; }
 
-    /// <summary>HTTP <c>Server</c> header, RTSP OPTIONS server, or TLS cert CN — no credentials, ever.</summary>
+    /// <summary>HTTP <c>Server</c> header, RTSP OPTIONS server, or TLS cert CN - no credentials, ever.</summary>
     public string? Banner { get; init; }
 
     public override string ToString() =>

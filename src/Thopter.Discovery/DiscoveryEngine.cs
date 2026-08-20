@@ -14,14 +14,14 @@ using Thopter.Discovery.Ssdp;
 namespace Thopter.Discovery;
 
 /// <summary>
-/// Orchestrates a one-shot local-network scan. Deliberately one-shot — no daemon, no
+/// Orchestrates a one-shot local-network scan. Deliberately one-shot - no daemon, no
 /// re-scan loop (continuous observation is monitoring, which stays server-side).
 ///
 /// Pipeline:
-///   Stage A — driver-free ARP sweep (IP + MAC + OUI vendor).
-///   Stage B — concurrent multicast probes (ONVIF WS-Discovery, SSDP, mDNS).
-///   Stage C — TCP connect scan + light banners on every live/responding host.
-///   Fusion  — offline, rule-based device type + model.
+///   Stage A - driver-free ARP sweep (IP + MAC + OUI vendor).
+///   Stage B - concurrent multicast probes (ONVIF WS-Discovery, SSDP, mDNS).
+///   Stage C - TCP connect scan + light banners on every live/responding host.
+///   Fusion  - offline, rule-based device type + model.
 /// Everything is unauthenticated, standard, and LAN-only.
 /// </summary>
 public sealed class DiscoveryEngine
@@ -144,7 +144,7 @@ public sealed class DiscoveryEngine
 
     /// <summary>
     /// After the port scan, re-read the neighbor table and attach MAC + OUI vendor to any
-    /// device we still lack one for — TCP contact resolves ARP even for ping-silent hosts.
+    /// device we still lack one for - TCP contact resolves ARP even for ping-silent hosts.
     /// Only helps for on-segment hosts (a routed host has no local neighbor entry).
     /// </summary>
     private void BackfillMacsFromNeighborTable(

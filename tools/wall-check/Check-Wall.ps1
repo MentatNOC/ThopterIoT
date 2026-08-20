@@ -11,9 +11,9 @@
     Checks:
       (1) No reference to a private connector / MentatNOC implementation assembly.
       (2) No forbidden strings in *.cs (ingest secrets or monitoring vocabulary).
-      (3) Egress-guard placeholder — the runtime "no socket to a public address during
+      (3) Egress-guard placeholder - the runtime "no socket to a public address during
           a scan" test lives in Thopter.Tests (category WallCheck); documented here.
-      (4) Public-API snapshot placeholder — wire PublicApiAnalyzers on Abstractions.
+      (4) Public-API snapshot placeholder - wire PublicApiAnalyzers on Abstractions.
 
     Exit code is non-zero if any hard check fails.
 #>
@@ -76,7 +76,7 @@ Write-Host "Check 3 (egress guard): enforced at runtime via 'dotnet test --filte
 # --- Check 4: public API snapshot ---
 # TODO: add Microsoft.CodeAnalysis.PublicApiAnalyzers + PublicAPI.Shipped.txt to
 # Thopter.Cloud.Abstractions so contract drift fails the build.
-Write-Host "Check 4 (public-API snapshot): TODO — wire PublicApiAnalyzers on Thopter.Cloud.Abstractions." -ForegroundColor DarkGray
+Write-Host "Check 4 (public-API snapshot): TODO - wire PublicApiAnalyzers on Thopter.Cloud.Abstractions." -ForegroundColor DarkGray
 
 if ($failures.Count -gt 0) {
     Write-Host "`nWALL-CHECK FAILED:" -ForegroundColor Red

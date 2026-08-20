@@ -50,7 +50,7 @@ public class ProtocolParsingTests
     public void Wsd_printer_response_is_not_treated_as_onvif()
     {
         // Microsoft WSD printers answer WS-Discovery on the same port as ONVIF cameras.
-        // Their Types is a print type and they carry no onvif.org scope — must NOT be ONVIF.
+        // Their Types is a print type and they carry no onvif.org scope - must NOT be ONVIF.
         const string soap =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
             "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\"" +

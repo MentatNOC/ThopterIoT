@@ -10,7 +10,7 @@ namespace Thopter.App.Export;
 /// <summary>
 /// Serializes scan results to CSV or JSON for the GUI export. Pure string producers with
 /// no file IO, so they are unit-testable and the View owns only the file picker. JSON goes
-/// through the source-generated <see cref="ScanJsonContext"/> — never reflection — so the
+/// through the source-generated <see cref="ScanJsonContext"/> - never reflection - so the
 /// whole app stays NativeAOT-safe.
 /// </summary>
 public static class DeviceExport

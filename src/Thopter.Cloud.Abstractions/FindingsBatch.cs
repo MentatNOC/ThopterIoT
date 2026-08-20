@@ -4,7 +4,7 @@ namespace Thopter.Cloud.Abstractions
 {
     /// <summary>
     /// The commodity request payload sent to a cloud sink. Everything here is information
-    /// a standard, unauthenticated LAN scan already produced — no monitoring semantics.
+    /// a standard, unauthenticated LAN scan already produced - no monitoring semantics.
     /// </summary>
     public sealed class FindingsBatch
     {
@@ -22,7 +22,7 @@ namespace Thopter.Cloud.Abstractions
 
     /// <summary>
     /// One discovered device, reduced to commodity, non-invasive facts. Protocol presence
-    /// is expressed as booleans only — never protocol payloads, media, or credentials.
+    /// is expressed as booleans only - never protocol payloads, media, or credentials.
     /// </summary>
     public sealed class DeviceFinding
     {
@@ -42,7 +42,7 @@ namespace Thopter.Cloud.Abstractions
 
         public string? Hostname { get; set; }
 
-        // Protocol *presence* only — booleans, never the exchanged data.
+        // Protocol *presence* only - booleans, never the exchanged data.
         public bool HasOnvif { get; set; }
         public bool HasSsdp { get; set; }
         public bool HasMdns { get; set; }

@@ -20,7 +20,7 @@ public class EgressGuardTests
     [InlineData("127.0.0.1", true)]       // loopback
     [InlineData("8.8.8.8", false)]        // public
     [InlineData("1.1.1.1", false)]        // public
-    [InlineData("100.64.0.1", false)]     // CGNAT — not RFC1918, refused
+    [InlineData("100.64.0.1", false)]     // CGNAT - not RFC1918, refused
     [InlineData("52.10.20.30", false)]    // public cloud
     public void IsLanScannable_only_allows_lan_destinations(string ip, bool expected)
     {

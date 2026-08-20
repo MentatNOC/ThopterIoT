@@ -40,7 +40,7 @@ internal static partial class Interop
     /// <summary>
     /// Return the interface the OS would route a packet to <paramref name="dwDestAddr"/> out
     /// of. This is a pure routing-table lookup that applies the full metric logic (route
-    /// metric + per-interface metric) — it opens no socket and sends nothing. Called with a
+    /// metric + per-interface metric) - it opens no socket and sends nothing. Called with a
     /// documentation address to resolve the true internet-facing (default-route) interface.
     /// </summary>
     [LibraryImport("iphlpapi.dll")]
@@ -56,7 +56,7 @@ internal static partial class Interop
         /// <summary>SOCKADDR_INET.si_family (AF_INET == 2 for IPv4).</summary>
         [FieldOffset(0)] internal ushort AddressFamily;
 
-        /// <summary>SOCKADDR_IN.sin_addr — IPv4 address in network byte order.</summary>
+        /// <summary>SOCKADDR_IN.sin_addr - IPv4 address in network byte order.</summary>
         [FieldOffset(4)] internal uint Ipv4Address;
 
         /// <summary>PhysicalAddress[IF_MAX_PHYS_ADDRESS_LENGTH == 32].</summary>

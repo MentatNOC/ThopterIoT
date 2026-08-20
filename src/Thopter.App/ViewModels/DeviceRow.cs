@@ -7,7 +7,7 @@ namespace Thopter.App.ViewModels;
 
 /// <summary>
 /// One "discovered via" pill shown in a device row. <see cref="Accent"/> marks the source
-/// worth highlighting (ONVIF — a positive camera/NVR signal).
+/// worth highlighting (ONVIF - a positive camera/NVR signal).
 /// </summary>
 public sealed class SourceBadge
 {
@@ -37,10 +37,10 @@ public sealed partial class DeviceRow : ObservableObject
 
     [ObservableProperty] private IReadOnlyList<SourceBadge> _sourceBadges = [];
 
-    /// <summary>No resolvable OUI vendor (unknown or randomized/virtual MAC) — rendered dimmed.</summary>
+    /// <summary>No resolvable OUI vendor (unknown or randomized/virtual MAC) - rendered dimmed.</summary>
     [ObservableProperty] private bool _isUnknownVendor = true;
 
-    /// <summary>Answered ONVIF WS-Discovery — a strong camera/NVR signal, rendered accented.</summary>
+    /// <summary>Answered ONVIF WS-Discovery - a strong camera/NVR signal, rendered accented.</summary>
     [ObservableProperty] private bool _isOnvifConfirmed;
 
     public DeviceRow(DiscoveredDevice device)

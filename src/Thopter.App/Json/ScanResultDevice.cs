@@ -7,7 +7,7 @@ namespace Thopter.App.Json;
 
 /// <summary>
 /// Flat, JSON-friendly projection of a <see cref="DiscoveredDevice"/> for the headless
-/// <c>scan --json</c> mode. Serialized only via <see cref="ScanJsonContext"/> (source-gen) —
+/// <c>scan --json</c> mode. Serialized only via <see cref="ScanJsonContext"/> (source-gen) -
 /// never reflection-based, so it stays NativeAOT-safe.
 /// </summary>
 public sealed class ScanResultDevice
@@ -46,7 +46,7 @@ public sealed class ScanResultDevice
 
 /// <summary>
 /// Source-generated serialization context for the headless scan output. Required for
-/// NativeAOT — reflection-based <c>JsonSerializer</c> is not used anywhere in this app.
+/// NativeAOT - reflection-based <c>JsonSerializer</c> is not used anywhere in this app.
 /// </summary>
 [JsonSourceGenerationOptions(WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(List<ScanResultDevice>))]

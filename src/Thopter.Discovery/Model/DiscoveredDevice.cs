@@ -22,7 +22,7 @@ public sealed class DiscoveredDevice
     /// <summary>IEEE OUI vendor for <see cref="Mac"/>, or null (unknown, or locally-administered/randomized).</summary>
     public string? Vendor { get; set; }
 
-    /// <summary>True when the MAC's locally-administered bit is set (randomized / virtual — not a real OUI).</summary>
+    /// <summary>True when the MAC's locally-administered bit is set (randomized / virtual - not a real OUI).</summary>
     public bool IsLocallyAdministered { get; set; }
 
     public DeviceType Type { get; set; } = DeviceType.Unknown;

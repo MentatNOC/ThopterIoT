@@ -42,7 +42,7 @@ public sealed class ArpSweep
         ArgumentNullException.ThrowIfNull(targets);
         ArgumentNullException.ThrowIfNull(options);
 
-        // Hosts that answered ICMP — the only ones we'll SendARP-backfill. SendARP blocks
+        // Hosts that answered ICMP - the only ones we'll SendARP-backfill. SendARP blocks
         // for seconds per *dead* host, so backfilling the whole subnet would hang; we only
         // ever backfill a host we already have positive liveness evidence for.
         var alive = new HashSet<IPAddress>();
@@ -67,7 +67,7 @@ public sealed class ArpSweep
         // 2. Read the whole IPv4 neighbor table in one shot.
         var map = new Dictionary<IPAddress, PhysicalAddress>(ReadNeighborTable());
 
-        // 3. Backfill alive hosts not yet in the table (rare — the ping already seeds most).
+        // 3. Backfill alive hosts not yet in the table (rare - the ping already seeds most).
         if (options.SendArpBackfill)
         {
             foreach (var ip in alive)
@@ -96,7 +96,7 @@ public sealed class ArpSweep
                     lock (aliveLock) alive.Add(ip);
                 }
             }
-            catch (PingException) { /* host down / unreachable — still seeds the cache, fine */ }
+            catch (PingException) { /* host down / unreachable - still seeds the cache, fine */ }
             catch (OperationCanceledException) { throw; }
             catch { /* transient socket errors are non-fatal for a sweep */ }
 
@@ -137,7 +137,7 @@ public sealed class ArpSweep
 
                 // Drop multicast/broadcast neighbor entries (e.g. 224.0.0.0/4 groups keyed
                 // by 01:00:5E:.. MACs, and the .255 broadcast at FF:FF:FF:FF:FF:FF). The
-                // low bit of the first octet is the I/G bit — set means group, never a host NIC.
+                // low bit of the first octet is the I/G bit - set means group, never a host NIC.
                 if ((row.PhysicalAddress[0] & 0x01) != 0) continue;
 
                 byte[] mac = new byte[6];

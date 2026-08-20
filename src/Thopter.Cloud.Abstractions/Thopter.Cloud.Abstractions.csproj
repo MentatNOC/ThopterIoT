@@ -10,7 +10,7 @@
     <IsPackable>true</IsPackable>
     <PackageId>Thopter.Cloud.Abstractions</PackageId>
     <Title>Thopter Cloud Abstractions</Title>
-    <Description>The public open-core seam for Thopter: IFindingsSink plus the commodity thopter.findings/v1 DTOs. Contains zero MentatNOC references — the request side is commodity, the response side is deliberately opaque.</Description>
+    <Description>The public open-core seam for Thopter: IFindingsSink plus the commodity thopter.findings/v1 DTOs. Contains zero MentatNOC references - the request side is commodity, the response side is deliberately opaque.</Description>
     <PackageTags>thopter;iot;discovery;onvif;open-core</PackageTags>
   </PropertyGroup>
 

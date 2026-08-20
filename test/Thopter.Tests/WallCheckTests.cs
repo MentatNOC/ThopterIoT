@@ -18,7 +18,7 @@ public class WallCheckTests
     public void Discovery_engine_has_no_http_client_dependency()
     {
         // The engine talks to the LAN via ICMP/UDP/TCP-connect only. It must not carry an
-        // HTTP client — there is nothing in the open tool that should POST anywhere.
+        // HTTP client - there is nothing in the open tool that should POST anywhere.
         var referenced = typeof(DiscoveryEngine).Assembly
             .GetReferencedAssemblies()
             .Select(a => a.Name);
@@ -46,7 +46,7 @@ public class WallCheckTests
     public async Task App_submit_flow_works_against_the_public_contract_with_a_fake_connector()
     {
         // Proves the app can run its full connect→activate→submit flow with no real
-        // connector — only the Abstractions seam.
+        // connector - only the Abstractions seam.
         var sink = new FakeFindingsSink();
         var activation = await sink.ActivateAsync("license-abc", CancellationToken.None);
         Assert.True(activation.Activated);

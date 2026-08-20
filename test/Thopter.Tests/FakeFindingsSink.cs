@@ -7,7 +7,7 @@ namespace Thopter.Tests;
 
 /// <summary>
 /// A configured, in-memory <see cref="IFindingsSink"/> used to prove the app's submit
-/// flow works against the public contract alone — with no real connector present.
+/// flow works against the public contract alone - with no real connector present.
 /// It records what it was handed and hands back an opaque success result.
 /// </summary>
 public sealed class FakeFindingsSink : IFindingsSink

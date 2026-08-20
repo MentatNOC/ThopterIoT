@@ -22,8 +22,8 @@ internal static class DnsClass
     /// <summary>
     /// Top bit of a question's QCLASS: the mDNS "QU" bit (RFC 6762 §5.4). It asks the
     /// responder to unicast its answer directly back to us instead of multicasting it to
-    /// the group. <see cref="Net.UdpProbe"/> never joins the multicast group — it only
-    /// listens on the ephemeral port it sent from — so without this bit set, responses
+    /// the group. <see cref="Net.UdpProbe"/> never joins the multicast group - it only
+    /// listens on the ephemeral port it sent from - so without this bit set, responses
     /// go to the group and we never see them.
     /// </summary>
     public const ushort UnicastResponseBit = 0x8000;
@@ -42,7 +42,7 @@ internal readonly record struct DnsSrvRecord(ushort Priority, ushort Weight, ush
 /// One decoded resource record. <see cref="Name"/>/<see cref="Type"/>/<see cref="Class"/>/
 /// <see cref="Ttl"/> are always populated; exactly one of the typed payload properties is
 /// populated depending on <see cref="Type"/> (the others stay null). Record types this
-/// codec doesn't care about (AAAA, NSEC, etc.) still show up with no typed payload — the
+/// codec doesn't care about (AAAA, NSEC, etc.) still show up with no typed payload - the
 /// caller can see the record existed without us having decoded its RDATA.
 /// </summary>
 internal sealed class DnsRecord
@@ -118,7 +118,7 @@ internal sealed class DnsMessage
     /// Decode a DNS/mDNS message. Never throws: mDNS is unauthenticated multicast from
     /// arbitrary devices on the LAN, so a truncated or malformed packet is expected input,
     /// not an exceptional one. On any parse failure this returns whatever records were
-    /// already decoded before the failure (possibly none) — it only returns <c>false</c>
+    /// already decoded before the failure (possibly none) - it only returns <c>false</c>
     /// when the 12-byte header itself doesn't fit.
     /// </summary>
     public static bool TryParse(ReadOnlySpan<byte> data, out DnsMessage msg)
@@ -127,7 +127,7 @@ internal sealed class DnsMessage
         if (data.Length < HeaderSize) return false;
 
         ushort id = BinaryPrimitives.ReadUInt16BigEndian(data[0..2]);
-        // data[2..4] = FLAGS — unused for our purposes (we don't distinguish query/response,
+        // data[2..4] = FLAGS - unused for our purposes (we don't distinguish query/response,
         // truncation, or opcode; we just harvest whatever records are present).
         ushort qdCount = BinaryPrimitives.ReadUInt16BigEndian(data[4..6]);
         ushort anCount = BinaryPrimitives.ReadUInt16BigEndian(data[6..8]);
@@ -219,7 +219,7 @@ internal sealed class DnsMessage
                 while (p < rdata.Length)
                 {
                     int len = rdata[p]; p += 1;
-                    if (p + len > rdata.Length) break; // truncated character-string — stop, keep what we had
+                    if (p + len > rdata.Length) break; // truncated character-string - stop, keep what we had
                     if (len > 0) list.Add(Encoding.UTF8.GetString(rdata.Slice(p, len)));
                     p += len;
                 }
@@ -234,7 +234,7 @@ internal sealed class DnsMessage
             }
 
             default:
-                break; // unsupported type — record is still returned with no typed payload
+                break; // unsupported type - record is still returned with no typed payload
         }
 
         record = new DnsRecord
@@ -253,7 +253,7 @@ internal sealed class DnsMessage
 
     /// <summary>
     /// Decode a (possibly compressed) domain name at <paramref name="pos"/> and advance
-    /// <paramref name="pos"/> to just past it in the *original* stream — i.e. past the two
+    /// <paramref name="pos"/> to just past it in the *original* stream - i.e. past the two
     /// bytes of the first compression pointer encountered, if any, not into the jumped-to
     /// data (RFC 1035 §4.1.4). Guards against out-of-bounds reads and pointer loops; on any
     /// problem it returns false and leaves <paramref name="pos"/> undefined for the caller
@@ -278,7 +278,7 @@ internal sealed class DnsMessage
             if (lead == 0)
             {
                 cursor += 1;
-                break; // root label — name is complete
+                break; // root label - name is complete
             }
 
             if ((lead & 0xC0) == 0xC0)
@@ -312,7 +312,7 @@ internal sealed class DnsMessage
             sb.Append(Encoding.UTF8.GetString(data.Slice(cursor, labelLen)));
             cursor += labelLen;
 
-            if (sb.Length > 1024) return false; // sanity cap — a real DNS name is <= 255 wire bytes
+            if (sb.Length > 1024) return false; // sanity cap - a real DNS name is <= 255 wire bytes
         }
 
         pos = jumped ? firstJumpReturn : cursor;

@@ -47,7 +47,7 @@ internal static class UdpProbe
         }
         catch (SocketException)
         {
-            return; // interface can't do multicast — skip it
+            return; // interface can't do multicast - skip it
         }
 
         using (socket)

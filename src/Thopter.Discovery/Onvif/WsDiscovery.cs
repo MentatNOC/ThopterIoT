@@ -8,9 +8,9 @@ namespace Thopter.Discovery.Onvif;
 
 /// <summary>
 /// ONVIF WS-Discovery probe: a SOAP 1.2 Probe multicast to 239.255.255.250:3702, then
-/// parse the ProbeMatch replies for XAddrs / Types / Scopes. Scopes are the prize —
+/// parse the ProbeMatch replies for XAddrs / Types / Scopes. Scopes are the prize -
 /// vendor, model, name, and device type, all unauthenticated. We never call the device
-/// back (no anonymous GetDeviceInformation) — WS-Discovery scopes only.
+/// back (no anonymous GetDeviceInformation) - WS-Discovery scopes only.
 /// </summary>
 public sealed class WsDiscovery
 {
@@ -35,7 +35,7 @@ public sealed class WsDiscovery
         {
             ProtocolFinding finding = GetOrCreate(byIp, reply.From);
             try { ParseProbeMatches(reply.Data, finding); }
-            catch { /* malformed SOAP — keep whatever we already extracted */ }
+            catch { /* malformed SOAP - keep whatever we already extracted */ }
         }
 
         // Only surface genuine ONVIF responders. WSD printers/scanners also answer on 3702;
@@ -88,7 +88,7 @@ public sealed class WsDiscovery
 
             // WS-Discovery (UDP 3702) is shared by ONVIF cameras and Microsoft WSD
             // printers/scanners. Treat it as ONVIF only on an ONVIF video type or an
-            // onvif.org scope — never on a bare WSD/print response.
+            // onvif.org scope - never on a bare WSD/print response.
             if (!string.IsNullOrWhiteSpace(types) && ContainsOnvifVideoType(types!))
                 isOnvif = true;
 
