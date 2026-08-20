@@ -30,6 +30,8 @@
   <ItemGroup>
     <!-- MentatNOC brand font (Martian Mono, SIL OFL) embedded for a driverless single-file app. -->
     <AvaloniaResource Include="Assets\Fonts\MartianMono-Variable.ttf" />
+    <!-- Scan-in-progress wing-flutter sprite frames (8-bit ornithopter wings). -->
+    <AvaloniaResource Include="Assets\Wings\*.png" />
   </ItemGroup>
 
   <ItemGroup>

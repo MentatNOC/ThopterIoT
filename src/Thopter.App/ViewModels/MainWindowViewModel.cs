@@ -64,6 +64,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isProgressIndeterminate;
 
+    /// <summary>Overall scan completion 0..1; paces the wing-flutter graphic and the bar.</summary>
+    [ObservableProperty]
+    private double _scanProgress;
+
     /// <summary>The device whose detail flyout is open, or null when closed.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsDetailOpen))]
@@ -99,9 +103,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         Devices.Clear();
         IsScanning = true;
         IsProgressIndeterminate = true;
+        ScanProgress = 0;
+        ProgressValue = 0;
         StatusText = $"Scanning {scanLabel}...";
 
-        _scanCts = new CancellationTokenSource();
+        var cts = new CancellationTokenSource();
+        _scanCts = cts;
 
         // DiscoveredDevice is mutated in place by the engine; marshal each report to the UI
         // thread rather than touching the collection from the scan's background thread.
@@ -112,9 +119,26 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 StatusText = $"Scanning {scanLabel}... {Devices.Count} device(s) found";
             }));
 
+        // Reports can race in from worker threads slightly out of order; only ever move
+        // forward. The first report flips the bar from indeterminate to real progress.
+        // A cancelled scan's abandoned probes keep reporting for up to their timeout, so
+        // the guard is keyed to THIS scan's CTS, not just IsScanning; otherwise a quick
+        // cancel-and-rescan lets stale fractions seed (and then pin) the new scan's bar.
+        // Safe without locks: the callback and the _scanCts writes are both UI-thread.
+        var overall = new Progress<double>(fraction =>
+        {
+            if (!IsScanning || !ReferenceEquals(_scanCts, cts)) return;
+            IsProgressIndeterminate = false;
+            if (fraction > ScanProgress)
+            {
+                ScanProgress = fraction;
+                ProgressValue = fraction * 100;
+            }
+        });
+
         try
         {
-            var results = await _engine.ScanAsync(options, progress, _scanCts.Token).ConfigureAwait(true);
+            var results = await _engine.ScanAsync(options, progress, overall, _scanCts.Token).ConfigureAwait(true);
             StatusText = $"Done. {results.Count} device(s) found on {scanLabel}.";
         }
         catch (OperationCanceledException)
@@ -129,8 +153,21 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             IsScanning = false;
             IsProgressIndeterminate = false;
+            ScanProgress = 0;
+            ProgressValue = 0;
             _scanCts?.Dispose();
             _scanCts = null;
+
+            // The spice sweep belongs to the scan: rows identified while scrolled out of
+            // view keep their cue only until the scan ends, so scrolling the results later
+            // doesn't set off gusts minutes after the fact. Posted at Background priority
+            // so it runs after the fusion-stage device reports still queued on the
+            // dispatcher; clearing inline here could lose the race and let those re-arm.
+            Dispatcher.UIThread.Post(() =>
+            {
+                foreach (var row in Devices)
+                    row.ConsumeSpiceSweep();
+            }, DispatcherPriority.Background);
         }
     }
 

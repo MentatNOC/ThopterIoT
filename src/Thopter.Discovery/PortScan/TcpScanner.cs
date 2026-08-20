@@ -29,25 +29,50 @@ public sealed class TcpScanOptions
 /// </summary>
 public sealed class TcpScanner
 {
-    public async Task<IReadOnlyList<ProtocolFinding>> ScanAsync(
+    public Task<IReadOnlyList<ProtocolFinding>> ScanAsync(
         IReadOnlyList<IPAddress> targets, TcpScanOptions options, CancellationToken ct)
+        => ScanAsync(targets, options, completedFraction: null, ct);
+
+    /// <summary>
+    /// Scan with live progress: <paramref name="completedFraction"/> reports the fraction of
+    /// (host, port) probes finished so far, 0.0 to 1.0. May be called from pool threads.
+    /// </summary>
+    public async Task<IReadOnlyList<ProtocolFinding>> ScanAsync(
+        IReadOnlyList<IPAddress> targets, TcpScanOptions options,
+        IProgress<double>? completedFraction, CancellationToken ct)
     {
         var byIp = new ConcurrentDictionary<IPAddress, ProtocolFinding>();
         using var gate = new SemaphoreSlim(Math.Max(1, options.Concurrency));
         var tasks = new List<Task>();
 
-        foreach (var ip in targets)
+        var lanTargets = targets.Where(NetInfo.IsLanScannable).ToList(); // egress guard
+        long totalUnits = (long)lanTargets.Count * options.Ports.Count;
+        long doneUnits = 0;
+
+        foreach (var ip in lanTargets)
         {
-            if (!NetInfo.IsLanScannable(ip)) continue; // egress guard
             foreach (var port in options.Ports)
             {
                 await gate.WaitAsync(ct).ConfigureAwait(false);
-                tasks.Add(ScanOneAsync(ip, port, options, byIp, gate, ct));
+                tasks.Add(RunOneAsync(ip, port));
             }
         }
 
         await Task.WhenAll(tasks).ConfigureAwait(false);
         return byIp.Values.ToList();
+
+        async Task RunOneAsync(IPAddress ip, int port)
+        {
+            try
+            {
+                await ScanOneAsync(ip, port, options, byIp, gate, ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                if (completedFraction is not null && totalUnits > 0)
+                    completedFraction.Report(Interlocked.Increment(ref doneUnits) / (double)totalUnits);
+            }
+        }
     }
 
     private static async Task ScanOneAsync(

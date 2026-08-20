@@ -59,4 +59,68 @@ public class DeviceRowTests
 
         Assert.Contains(row.SourceBadges, b => b.Text == "NBNS");
     }
+
+    [Fact]
+    public void Spice_sweep_arms_once_when_a_row_becomes_a_camera_and_never_rearms()
+    {
+        var device = new DiscoveredDevice { Key = "ip:10.10.10.8" };
+        device.AddAddress(IPAddress.Parse("10.10.10.8"));
+
+        var row = new DeviceRow(device);
+        Assert.False(row.SpiceSweepPending);
+
+        // Evidence accrues mid-scan: the ONVIF answer arrives and the row refreshes.
+        device.Sources = DiscoverySource.Onvif;
+        row.Refresh(device);
+        Assert.True(row.SpiceSweepPending);
+
+        // The view plays the gust and consumes the cue; later refreshes must not re-arm it.
+        row.ConsumeSpiceSweep();
+        Assert.False(row.SpiceSweepPending);
+        row.Refresh(device);
+        Assert.False(row.SpiceSweepPending);
+    }
+
+    [Fact]
+    public void Spice_sweep_arms_for_a_fused_camera_type_without_onvif()
+    {
+        var device = new DiscoveredDevice { Key = "ip:10.10.10.9" };
+        device.AddAddress(IPAddress.Parse("10.10.10.9"));
+        device.Type = DeviceType.Camera;
+
+        var row = new DeviceRow(device);
+
+        Assert.True(row.SpiceSweepPending);
+        Assert.False(row.IsOnvifConfirmed);
+    }
+
+    [Fact]
+    public void Spice_sweep_arms_for_a_fused_nvr_type_without_onvif()
+    {
+        // A recorder found by port signature alone (e.g. DVRIP 34567 + RTSP) is typed Nvr
+        // with no ONVIF source; the gust keys on what the device is, not which protocol
+        // found it, so it must arm the same as an ONVIF-answering recorder.
+        var device = new DiscoveredDevice { Key = "ip:10.10.10.11" };
+        device.AddAddress(IPAddress.Parse("10.10.10.11"));
+        device.Type = DeviceType.Nvr;
+
+        var row = new DeviceRow(device);
+
+        Assert.True(row.SpiceSweepPending);
+        Assert.False(row.IsOnvifConfirmed);
+    }
+
+    [Fact]
+    public void Spice_sweep_stays_unarmed_for_non_camera_devices()
+    {
+        var device = new DiscoveredDevice { Key = "ip:10.10.10.10" };
+        device.AddAddress(IPAddress.Parse("10.10.10.10"));
+        device.Type = DeviceType.Printer;
+        device.Sources = DiscoverySource.Arp | DiscoverySource.Ssdp;
+
+        var row = new DeviceRow(device);
+        row.Refresh(device);
+
+        Assert.False(row.SpiceSweepPending);
+    }
 }
