@@ -1,0 +1,164 @@
+name: Release
+
+# Two triggers, two kinds of release:
+#   - push to main      -> rolling "dev-latest" pre-release (rebuilt/replaced every push)
+#   - push of a v* tag  -> a real, numbered release (e.g. v1.2.0)
+#
+# Both paths build the same three self-contained NativeAOT single-file binaries
+# (win-x64, win-x86, win-arm64) for Thopter.App and zip each one up as a release asset.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  # Only one dev-latest build in flight at a time; tag builds get their own group
+  # (via the ref name) so a v* push never gets cancelled by a main push or vice versa.
+  group: release-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref == 'refs/heads/main' }}
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Restore/build/test once, on Any CPU, before spending time on 3 AOT publishes.
+  # This mirrors ci.yml's build-test job so a broken build never reaches release.
+  # ---------------------------------------------------------------------------
+  verify:
+    name: Build & test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore Thopter.sln
+
+      - name: Build (Release, warnings as errors)
+        run: dotnet build Thopter.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test Thopter.sln -c Release --no-build --verbosity normal
+
+  # ---------------------------------------------------------------------------
+  # Publish a self-contained NativeAOT single-file build of Thopter.App per RID.
+  # ---------------------------------------------------------------------------
+  build:
+    name: Publish (${{ matrix.rid }})
+    needs: verify
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [win-x64, win-x86, win-arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Determine version
+        id: version
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            $ver = $env:GITHUB_REF -replace 'refs/tags/v', ''
+          } else {
+            $shortSha = $env:GITHUB_SHA.Substring(0, 7)
+            $ver = "0.0.0-dev.$(Get-Date -Format 'yyyyMMddHHmmss').$shortSha"
+          }
+          echo "version=$ver" >> $env:GITHUB_OUTPUT
+
+      - name: Restore
+        run: dotnet restore src/Thopter.App/Thopter.App.csproj -r ${{ matrix.rid }}
+
+      - name: Publish (NativeAOT, self-contained, single file)
+        run: >
+          dotnet publish src/Thopter.App/Thopter.App.csproj
+          -c Release
+          -r ${{ matrix.rid }}
+          --self-contained true
+          --no-restore
+          -p:Version=${{ steps.version.outputs.version }}
+          -p:InformationalVersion=${{ steps.version.outputs.version }}
+          -o publish/${{ matrix.rid }}
+
+      - name: Zip artifact
+        shell: pwsh
+        run: |
+          $name = "ThopterIoT-${{ steps.version.outputs.version }}-${{ matrix.rid }}.zip"
+          Compress-Archive -Path publish/${{ matrix.rid }}/* -DestinationPath $name
+          echo "ZIP_NAME=$name" >> $env:GITHUB_ENV
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: thopter-${{ matrix.rid }}
+          path: ${{ env.ZIP_NAME }}
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # main push -> rolling dev-latest pre-release, replaced every time.
+  # ---------------------------------------------------------------------------
+  release-dev:
+    name: Publish dev-latest release
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: thopter-*
+          merge-multiple: true
+
+      - name: Publish rolling pre-release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: dev-latest
+          name: "Dev build (${{ github.sha }})"
+          commit: ${{ github.sha }}
+          artifacts: artifacts/*.zip
+          allowUpdates: true
+          removeArtifacts: true
+          replacesArtifacts: true
+          makeLatest: false
+          prerelease: true
+          body: |
+            Automatic rolling build from the latest commit on `main`.
+            Commit: ${{ github.sha }}
+
+            This is a dev build, not a stable release — grab it if you want the bleeding edge,
+            otherwise use the latest `vX.Y.Z` release.
+
+  # ---------------------------------------------------------------------------
+  # v* tag push -> a real, numbered release.
+  # ---------------------------------------------------------------------------
+  release-stable:
+    name: Publish numbered release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: thopter-*
+          merge-multiple: true
+
+      - name: Publish release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          artifacts: artifacts/*.zip
+          generateReleaseNotes: true
+          makeLatest: true
+          prerelease: false
