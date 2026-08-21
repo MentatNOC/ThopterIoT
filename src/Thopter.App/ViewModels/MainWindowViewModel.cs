@@ -30,7 +30,7 @@ namespace Thopter.App.ViewModels;
 /// </summary>
 public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 {
-    private const string UpgradeUrl = "https://mentatnoc.com/thopteriot";
+    private const string UpgradeUrl = ResourceUrls.ThopterResources;
 
     private readonly DiscoveryEngine _engine = new();
 
@@ -52,12 +52,22 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<NetworkInterfaceInfo> Interfaces { get; } = new();
 
+    /// <summary>Shared, resizable column widths for the device grid header and every row.</summary>
+    public ColumnLayout Columns { get; } = new();
+
     [ObservableProperty]
     private NetworkInterfaceInfo? _selectedInterface;
 
     /// <summary>Optional manual CIDR override (e.g. "10.10.10.0/24"). When set, overrides the interface pick.</summary>
     [ObservableProperty]
     private string _manualCidr = "";
+
+    /// <summary>
+    /// When true, sweep every active interface at once instead of only the selected
+    /// subnet. Off by default so a scan stays on the network the user picked.
+    /// </summary>
+    [ObservableProperty]
+    private bool _scanAllNetworks;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ScanCommand))]
@@ -304,6 +314,27 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         label = "";
         error = null;
 
+        // "Scan all networks" sweeps every active interface's subnet in one run and turns
+        // off the in-scope filter, so the results deliberately span every segment. A manual
+        // CIDR still wins even in this mode - an explicit range is an explicit intent.
+        if (ScanAllNetworks && string.IsNullOrWhiteSpace(ManualCidr))
+        {
+            var subnets = NetInfo.GetActiveIPv4Interfaces()
+                .Select(i => $"{NetInfo.NetworkAddressOf(i.HostAddress, i.PrefixLength)}/{i.PrefixLength}")
+                .Distinct()
+                .ToArray();
+
+            if (subnets.Length == 0)
+            {
+                error = "No active network interfaces to scan.";
+                return false;
+            }
+
+            options = new DiscoveryOptions { Cidrs = subnets, RestrictToTargetSubnets = false };
+            label = subnets.Length == 1 ? subnets[0] : $"all networks ({subnets.Length} subnets)";
+            return true;
+        }
+
         if (!string.IsNullOrWhiteSpace(ManualCidr))
         {
             if (!TryValidateCidr(ManualCidr, out var cidr, out error))
@@ -363,7 +394,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         var existing = Devices.FirstOrDefault(r => r.Key == device.Key);
         if (existing is null)
-            Devices.Add(new DeviceRow(device));
+            Devices.Add(new DeviceRow(device, Columns));
         else
             existing.Refresh(device);
     }

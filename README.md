@@ -17,6 +17,12 @@ ThopterIoT is a local scanner. It runs one-shot, reports what it finds, and stop
 ## Status
 
 Early build. **Working today:** the driver-free IP + MAC + vendor discovery engine, the protocol-discovery layer (ONVIF / SSDP / mDNS / TCP port scan + NetBIOS name resolution), and the Avalonia desktop GUI - a live device grid (IP, MAC, vendor, type/model, discovered-via, hostname, open ports) with a right-click row menu (copy IP, copy MAC, open in browser), a detail flyout, and CSV/JSON export. A headless `scan` mode is also available.
+## Download
+
+**[Download for Windows](https://github.com/MentatNOC/ThopterIoT/releases/latest/download/ThopterIoT-win-x64.exe)** - a single self-contained exe, no install and no admin. Or browse [all releases](https://github.com/MentatNOC/ThopterIoT/releases/latest).
+
+The build is not code-signed yet, so Windows SmartScreen may warn on first run - choose **More info -> Run anyway**. Signing is planned.
+
 ## Try the headless scan
 
 ```bash

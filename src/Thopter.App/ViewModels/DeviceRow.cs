@@ -29,6 +29,10 @@ public sealed partial class DeviceRow : ObservableObject
     /// <summary>The live device this row mirrors. Mutated in place by the engine.</summary>
     public DiscoveredDevice Device { get; }
 
+    /// <summary>Shared grid column widths; the row template binds its column sizes here so
+    /// dragging a header handle resizes every row. Falls back to a private layout in tests.</summary>
+    public ColumnLayout Columns { get; }
+
     [ObservableProperty] private string _ip = "";
     [ObservableProperty] private string _mac = "-";
     [ObservableProperty] private string _vendor = "-";
@@ -61,10 +65,11 @@ public sealed partial class DeviceRow : ObservableObject
 
     private bool _sweepFired;
 
-    public DeviceRow(DiscoveredDevice device)
+    public DeviceRow(DiscoveredDevice device, ColumnLayout? columns = null)
     {
         Device = device;
         Key = device.Key;
+        Columns = columns ?? new ColumnLayout();
         Refresh(device);
     }
 

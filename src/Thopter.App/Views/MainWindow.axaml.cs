@@ -15,9 +15,6 @@ namespace Thopter.App.Views;
 
 public partial class MainWindow : Window
 {
-    // Static resource page; the click sends nothing about the device or the scan.
-    private const string CveResourceUrl = "https://mentatnoc.com/resources/thopteriot";
-
     public MainWindow()
     {
         InitializeComponent();
@@ -25,10 +22,11 @@ public partial class MainWindow : Window
 
     private void OnCveClick(object? sender, RoutedEventArgs e)
     {
-        // AOT-safe launch via the OS shell, same pattern as the upgrade CTA.
+        // AOT-safe launch via the OS shell, same pattern as the upgrade CTA. Carries no
+        // device or scan data - just opens the shared resources page.
         try
         {
-            Process.Start(new ProcessStartInfo { FileName = CveResourceUrl, UseShellExecute = true });
+            Process.Start(new ProcessStartInfo { FileName = ResourceUrls.ThopterResources, UseShellExecute = true });
         }
         catch (Exception ex) when (DataContext is MainWindowViewModel vm)
         {

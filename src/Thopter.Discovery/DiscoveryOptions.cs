@@ -36,6 +36,14 @@ public sealed class DiscoveryOptions
     /// </summary>
     public bool PortScanAllTargets { get; init; } = true;
 
+    /// <summary>
+    /// Report only devices whose address is inside the scanned target range. On a host with
+    /// several NICs the OS neighbor table holds neighbors from every segment, so without this
+    /// a scan of one subnet also lists the others' hosts. Default on; turn off to sweep every
+    /// interface at once ("scan all networks").
+    /// </summary>
+    public bool RestrictToTargetSubnets { get; init; } = true;
+
     // --- Protocol-layer toggles ---
     public bool EnableOnvif { get; init; } = true;
     public bool EnableSsdp { get; init; } = true;
@@ -72,6 +80,37 @@ public sealed class DiscoveryOptions
         }
 
         return targets;
+    }
+
+    /// <summary>
+    /// The subnet ranges this scan targets, as (network, mask) integer pairs. Scope is tested
+    /// by mask so it stays correct on subnets wider than the per-subnet host-enumeration cap
+    /// (<see cref="MaxHostsPerSubnet"/>) - the enumerated host list stops at that cap, so it
+    /// must not double as the "is this address in my subnet" test.
+    /// </summary>
+    public IReadOnlyList<(uint Network, uint Mask)> ResolveTargetSubnets()
+    {
+        var subnets = new List<(uint, uint)>();
+
+        if (Cidrs.Count > 0)
+        {
+            foreach (var cidr in Cidrs)
+            {
+                if (!TryParseCidr(cidr, out var addr, out var prefix)) continue;
+                uint mask = prefix == 0 ? 0u : uint.MaxValue << (32 - prefix);
+                subnets.Add((NetInfo.ToUInt(addr) & mask, mask));
+            }
+            return subnets;
+        }
+
+        var nic = Interface ?? NetInfo.GetPrimaryInterface();
+        if (nic is not null)
+        {
+            uint mask = nic.PrefixLength == 0 ? 0u : uint.MaxValue << (32 - nic.PrefixLength);
+            subnets.Add((NetInfo.ToUInt(nic.HostAddress) & mask, mask));
+        }
+
+        return subnets;
     }
 
     private static bool TryParseCidr(string cidr, out IPAddress address, out int prefix)

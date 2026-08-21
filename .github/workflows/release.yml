@@ -1,0 +1,56 @@
+name: Release
+
+# Tag a version (v0.1.0, v1.2.3, ...) to build the NativeAOT Windows exe and publish it
+# as a GitHub Release. The asset name carries no version, so the download link
+# https://github.com/MentatNOC/ThopterIoT/releases/latest/download/ThopterIoT-win-x64.exe
+# always resolves to the newest build with no page edit.
+#
+# Code signing (Azure Trusted Signing or an EV cert) is not wired in yet; until it is, the
+# published exe is unsigned and SmartScreen shows a first-run warning. Add the signing step
+# between publish and release once the certificate identity is settled.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build & publish Windows exe
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build & test (Release, warnings as errors)
+        run: |
+          dotnet build Thopter.sln -c Release
+          dotnet test Thopter.sln -c Release --no-build
+
+      - name: Publish NativeAOT (win-x64)
+        run: dotnet publish src/Thopter.App/Thopter.App.csproj -c Release -r win-x64
+
+      - name: Stage download asset (stable name)
+        shell: pwsh
+        run: |
+          $publish = "src/Thopter.App/bin/Release/net10.0/win-x64/publish/Thopter.App.exe"
+          if (-not (Test-Path $publish)) { throw "AOT publish output not found at $publish" }
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item $publish "dist/ThopterIoT-win-x64.exe"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh release create "$env:GITHUB_REF_NAME" `
+            "dist/ThopterIoT-win-x64.exe" `
+            --title "ThopterIoT $env:GITHUB_REF_NAME" `
+            --notes "Local IoT and IP-camera discovery scanner for Windows. Download ThopterIoT-win-x64.exe below and run it. No install, no admin, scans locally and stores nothing.`n`nThis build is not yet code-signed, so Windows SmartScreen may warn on first run (More info -> Run anyway)."

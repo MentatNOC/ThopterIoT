@@ -64,6 +64,19 @@
             <Setter Property="StrokeLineCap" Value="Round" />
         </Style>
 
+        <!-- Column resize handles in the header. Thin, hoverable, column-resize cursor. -->
+        <Style Selector="GridSplitter.colsplit">
+            <Setter Property="Width" Value="4" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="ResizeDirection" Value="Columns" />
+            <Setter Property="ResizeBehavior" Value="PreviousAndNext" />
+            <Setter Property="Cursor" Value="SizeWestEast" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+        </Style>
+        <Style Selector="GridSplitter.colsplit:pointerover">
+            <Setter Property="Background" Value="{DynamicResource HairlineStrongBrush}" />
+        </Style>
+
         <!-- Stretch list rows so columns line up with the header -->
         <Style Selector="ListBox#DeviceList ListBoxItem">
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -145,6 +158,9 @@
                          IsEnabled="{Binding !IsScanning}"
                          Width="150"
                          VerticalAlignment="Center" />
+                <CheckBox Content="All networks" IsChecked="{Binding ScanAllNetworks}"
+                          IsEnabled="{Binding !IsScanning}" VerticalAlignment="Center"
+                          ToolTip.Tip="Sweep every active interface at once instead of only the selected subnet" />
                 <Button Content="Scan" Command="{Binding ScanCommand}" IsDefault="True" Classes="accent" />
                 <Button Content="Cancel" Command="{Binding CancelCommand}" />
                 <Button x:Name="ExportButton" Content="Export…" Click="OnExportClick"
@@ -156,15 +172,41 @@
 
                 <Border Grid.Row="0" Background="{DynamicResource InkRaiseBrush}"
                         BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,0,0,1" Padding="8,5">
-                    <Grid ColumnDefinitions="125,145,160,115,145,145,*,54">
-                        <TextBlock Grid.Column="0" Text="IP" FontWeight="Bold" />
-                        <TextBlock Grid.Column="1" Text="MAC" FontWeight="Bold" />
-                        <TextBlock Grid.Column="2" Text="Vendor" FontWeight="Bold" />
-                        <TextBlock Grid.Column="3" Text="Type" FontWeight="Bold" />
-                        <TextBlock Grid.Column="4" Text="Discovered via" FontWeight="Bold" />
-                        <TextBlock Grid.Column="5" Text="Hostname" FontWeight="Bold" />
-                        <TextBlock Grid.Column="6" Text="Open ports" FontWeight="Bold" />
-                        <TextBlock Grid.Column="7" Text="CVEs" FontWeight="Bold" />
+                    <!-- Column widths bind two-way to the shared ColumnLayout so the resize
+                         handles below write back and every row follows. The '4' columns are
+                         drag handles; the trailing '*' lets the header fill the row width. -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{Binding Columns.Ip, Mode=TwoWay}" MinWidth="44" />
+                            <ColumnDefinition Width="4" />
+                            <ColumnDefinition Width="{Binding Columns.Mac, Mode=TwoWay}" MinWidth="44" />
+                            <ColumnDefinition Width="4" />
+                            <ColumnDefinition Width="{Binding Columns.Vendor, Mode=TwoWay}" MinWidth="44" />
+                            <ColumnDefinition Width="4" />
+                            <ColumnDefinition Width="{Binding Columns.Type, Mode=TwoWay}" MinWidth="44" />
+                            <ColumnDefinition Width="4" />
+                            <ColumnDefinition Width="{Binding Columns.Via, Mode=TwoWay}" MinWidth="44" />
+                            <ColumnDefinition Width="4" />
+                            <ColumnDefinition Width="{Binding Columns.Hostname, Mode=TwoWay}" MinWidth="44" />
+                            <ColumnDefinition Width="4" />
+                            <ColumnDefinition Width="{Binding Columns.Ports, Mode=TwoWay}" MinWidth="44" />
+                            <ColumnDefinition Width="4" />
+                            <ColumnDefinition Width="54" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="IP" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+                        <GridSplitter Grid.Column="1" Classes="colsplit" />
+                        <TextBlock Grid.Column="2" Text="MAC" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+                        <GridSplitter Grid.Column="3" Classes="colsplit" />
+                        <TextBlock Grid.Column="4" Text="Vendor" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+                        <GridSplitter Grid.Column="5" Classes="colsplit" />
+                        <TextBlock Grid.Column="6" Text="Type" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+                        <GridSplitter Grid.Column="7" Classes="colsplit" />
+                        <TextBlock Grid.Column="8" Text="Discovered via" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+                        <GridSplitter Grid.Column="9" Classes="colsplit" />
+                        <TextBlock Grid.Column="10" Text="Hostname" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+                        <GridSplitter Grid.Column="11" Classes="colsplit" />
+                        <TextBlock Grid.Column="12" Text="Open ports" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="14" Text="CVEs" FontWeight="Bold" />
                     </Grid>
                 </Border>
 
@@ -187,18 +229,38 @@
                                     </ContextMenu>
                                 </Border.ContextMenu>
                                 <Grid>
-                                    <Grid ColumnDefinitions="125,145,160,115,145,145,*,54">
-                                        <TextBlock Grid.Column="0" Text="{Binding Ip}" VerticalAlignment="Center" />
-                                        <TextBlock Grid.Column="1" Text="{Binding Mac}" VerticalAlignment="Center" />
-                                        <TextBlock Grid.Column="2" Text="{Binding Vendor}" VerticalAlignment="Center"
-                                                   TextTrimming="CharacterEllipsis" />
-                                        <StackPanel Grid.Column="3" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Type}" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="{Binding Columns.Ip}" MinWidth="44" />
+                                            <ColumnDefinition Width="4" />
+                                            <ColumnDefinition Width="{Binding Columns.Mac}" MinWidth="44" />
+                                            <ColumnDefinition Width="4" />
+                                            <ColumnDefinition Width="{Binding Columns.Vendor}" MinWidth="44" />
+                                            <ColumnDefinition Width="4" />
+                                            <ColumnDefinition Width="{Binding Columns.Type}" MinWidth="44" />
+                                            <ColumnDefinition Width="4" />
+                                            <ColumnDefinition Width="{Binding Columns.Via}" MinWidth="44" />
+                                            <ColumnDefinition Width="4" />
+                                            <ColumnDefinition Width="{Binding Columns.Hostname}" MinWidth="44" />
+                                            <ColumnDefinition Width="4" />
+                                            <ColumnDefinition Width="{Binding Columns.Ports}" MinWidth="44" />
+                                            <ColumnDefinition Width="4" />
+                                            <ColumnDefinition Width="54" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="{Binding Ip}" VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Ip}" />
+                                        <TextBlock Grid.Column="2" Text="{Binding Mac}" VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Mac}" />
+                                        <TextBlock Grid.Column="4" Text="{Binding Vendor}" VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Vendor}" />
+                                        <StackPanel Grid.Column="6" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Type}" TextTrimming="CharacterEllipsis" />
                                             <TextBlock Text="{Binding Model}" IsVisible="{Binding HasModel}"
                                                        Foreground="{DynamicResource MuteBrush}" FontSize="11"
-                                                       TextTrimming="CharacterEllipsis" />
+                                                       TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Model}" />
                                         </StackPanel>
-                                        <ItemsControl Grid.Column="4" ItemsSource="{Binding SourceBadges}" VerticalAlignment="Center">
+                                        <ItemsControl Grid.Column="8" ItemsSource="{Binding SourceBadges}" VerticalAlignment="Center"
+                                                      ClipToBounds="True">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <WrapPanel />
@@ -212,11 +274,11 @@
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
-                                        <TextBlock Grid.Column="5" Text="{Binding Hostname}" VerticalAlignment="Center"
-                                                   TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Grid.Column="6" Text="{Binding Ports}" VerticalAlignment="Center"
-                                                   TextTrimming="CharacterEllipsis" />
-                                        <Button Grid.Column="7" Classes="linklike" Content="CVEs" Click="OnCveClick"
+                                        <TextBlock Grid.Column="10" Text="{Binding Hostname}" VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Hostname}" />
+                                        <TextBlock Grid.Column="12" Text="{Binding Ports}" VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Ports}" />
+                                        <Button Grid.Column="14" Classes="linklike" Content="CVEs" Click="OnCveClick"
                                                 ToolTip.Tip="Camera and IoT CVE resources on mentatnoc.com" />
                                     </Grid>
 

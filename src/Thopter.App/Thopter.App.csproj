@@ -31,6 +31,16 @@
     <Description>ThopterIoT desktop GUI - local-network IoT/IP-camera discovery scanner (free, open-core front end for MentatNOC).</Description>
   </PropertyGroup>
 
+  <!-- Avalonia's assemblies are not fully trim-annotated, so the AOT compiler (ILC) rolls
+       up IL2026/IL2104/IL3053 warnings for them, and warnings-as-errors would fail the
+       publish. ILC only runs when publishing for a concrete runtime, so scoping the NoWarn
+       to a set RuntimeIdentifier keeps the strict build-time trim/AOT analyzers on our own
+       code (plain build and test carry no RID) while letting the AOT publish through.
+       Avalonia supports NativeAOT with compiled bindings, which this project mandates. -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <NoWarn>$(NoWarn);IL2026;IL2104;IL3053</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- MentatNOC brand font (Martian Mono, SIL OFL) embedded for a driverless single-file app. -->
     <AvaloniaResource Include="Assets\Fonts\MartianMono-Variable.ttf" />

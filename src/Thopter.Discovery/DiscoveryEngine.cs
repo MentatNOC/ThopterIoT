@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using Thopter.Discovery.Arp;
 using Thopter.Discovery.Identify;
 using Thopter.Discovery.Mdns;
@@ -75,6 +76,24 @@ public sealed class DiscoveryEngine
             return Array.Empty<DiscoveredDevice>();
         }
 
+        // Membership test for "did this address fall inside what the user asked to scan".
+        // The neighbor table and multicast are host-wide, so on a multi-NIC box every stage
+        // can surface addresses from other segments; this keeps a scan to its target subnets
+        // unless the caller opted into scanning all interfaces at once. Tested by subnet mask,
+        // NOT the enumerated host list - that list is capped at MaxHostsPerSubnet, so on a
+        // subnet wider than the cap it would wrongly drop legitimate same-subnet hosts.
+        var scopeSubnets = options.RestrictToTargetSubnets ? options.ResolveTargetSubnets() : null;
+
+        bool InScope(IPAddress ip)
+        {
+            if (scopeSubnets is null) return true;
+            if (ip.AddressFamily != AddressFamily.InterNetwork) return false;
+            uint v = NetInfo.ToUInt(ip);
+            foreach (var (network, mask) in scopeSubnets)
+                if ((v & mask) == network) return true;
+            return false;
+        }
+
         // --- Stage A: driver-free IP↔MAC sweep + OUI vendor ---
         overall.Report(0.0);
         long pingedCount = 0;
@@ -88,6 +107,7 @@ public sealed class DiscoveryEngine
         foreach (var (ip, mac) in ipToMac)
         {
             ct.ThrowIfCancellationRequested();
+            if (!InScope(ip)) continue; // other-segment neighbor
             var device = MergeArp(registry, ipIndex, ip, mac);
             progress?.Report(device);
         }
@@ -124,7 +144,10 @@ public sealed class DiscoveryEngine
             var broadcast = await whenAll.ConfigureAwait(false);
             foreach (var findings in broadcast)
                 foreach (var finding in findings)
+                {
+                    if (!InScope(finding.Address)) continue;
                     ApplyFinding(MergeFinding(registry, ipIndex, finding), finding, progress);
+                }
         }
         overall.Report(StageBEnd);
 
