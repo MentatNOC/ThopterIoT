@@ -9,13 +9,14 @@
         x:Class="Thopter.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         x:CompileBindings="True"
-        d:DesignWidth="1000" d:DesignHeight="700"
-        Width="1000" Height="700"
+        d:DesignWidth="1200" d:DesignHeight="700"
+        Width="1200" Height="700"
         Background="{DynamicResource InkBrush}"
         Foreground="{DynamicResource BoneBrush}"
         FontFamily="{StaticResource BrandFont}"
         FontSize="13"
-        Title="ThopterIoT">
+        Title="ThopterIoT"
+        Icon="/Assets/thopter.ico">
 
     <Design.DataContext>
         <vm:MainWindowViewModel />
@@ -67,6 +68,19 @@
         <Style Selector="ListBox#DeviceList ListBoxItem">
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="Padding" Value="0" />
+        </Style>
+
+        <!-- CVEs column link: opens the mentatnoc.com resource page, carries no scan data -->
+        <Style Selector="Button.linklike">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="2,0" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource SaphoBrush}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
         <!-- Detail flyout key labels -->
@@ -142,7 +156,7 @@
 
                 <Border Grid.Row="0" Background="{DynamicResource InkRaiseBrush}"
                         BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,0,0,1" Padding="8,5">
-                    <Grid ColumnDefinitions="125,145,160,115,145,145,*">
+                    <Grid ColumnDefinitions="125,145,160,115,145,145,*,54">
                         <TextBlock Grid.Column="0" Text="IP" FontWeight="Bold" />
                         <TextBlock Grid.Column="1" Text="MAC" FontWeight="Bold" />
                         <TextBlock Grid.Column="2" Text="Vendor" FontWeight="Bold" />
@@ -150,6 +164,7 @@
                         <TextBlock Grid.Column="4" Text="Discovered via" FontWeight="Bold" />
                         <TextBlock Grid.Column="5" Text="Hostname" FontWeight="Bold" />
                         <TextBlock Grid.Column="6" Text="Open ports" FontWeight="Bold" />
+                        <TextBlock Grid.Column="7" Text="CVEs" FontWeight="Bold" />
                     </Grid>
                 </Border>
 
@@ -172,7 +187,7 @@
                                     </ContextMenu>
                                 </Border.ContextMenu>
                                 <Grid>
-                                    <Grid ColumnDefinitions="125,145,160,115,145,145,*">
+                                    <Grid ColumnDefinitions="125,145,160,115,145,145,*,54">
                                         <TextBlock Grid.Column="0" Text="{Binding Ip}" VerticalAlignment="Center" />
                                         <TextBlock Grid.Column="1" Text="{Binding Mac}" VerticalAlignment="Center" />
                                         <TextBlock Grid.Column="2" Text="{Binding Vendor}" VerticalAlignment="Center"
@@ -201,6 +216,8 @@
                                                    TextTrimming="CharacterEllipsis" />
                                         <TextBlock Grid.Column="6" Text="{Binding Ports}" VerticalAlignment="Center"
                                                    TextTrimming="CharacterEllipsis" />
+                                        <Button Grid.Column="7" Classes="linklike" Content="CVEs" Click="OnCveClick"
+                                                ToolTip.Tip="Camera and IoT CVE resources on mentatnoc.com" />
                                     </Grid>
 
                                     <!-- Camera lock-on reticle: corner brackets, shown only for ONVIF-confirmed cameras -->

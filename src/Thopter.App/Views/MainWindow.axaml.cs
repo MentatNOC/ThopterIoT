@@ -15,9 +15,37 @@ namespace Thopter.App.Views;
 
 public partial class MainWindow : Window
 {
+    // Static resource page; the click sends nothing about the device or the scan.
+    private const string CveResourceUrl = "https://mentatnoc.com/resources/thopteriot";
+
     public MainWindow()
     {
         InitializeComponent();
+    }
+
+    private void OnCveClick(object? sender, RoutedEventArgs e)
+    {
+        // AOT-safe launch via the OS shell, same pattern as the upgrade CTA.
+        try
+        {
+            Process.Start(new ProcessStartInfo { FileName = CveResourceUrl, UseShellExecute = true });
+        }
+        catch (Exception ex) when (DataContext is MainWindowViewModel vm)
+        {
+            vm.StatusText = $"Could not open browser: {ex.Message}";
+        }
+        catch
+        {
+            // no view model to report to - opening a browser is best-effort
+        }
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        // Releases the view model's static NetworkChange subscriptions; runs on the UI
+        // thread, which the debounce timer's Stop requires.
+        (DataContext as IDisposable)?.Dispose();
+        base.OnClosed(e);
     }
 
     private void OnDeviceDoubleTapped(object? sender, TappedEventArgs e)

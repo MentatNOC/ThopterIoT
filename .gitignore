@@ -44,3 +44,6 @@ Thumbs.db
 
 # Internal build blueprint - kept locally, NOT published.
 /BUILD-SPEC.md
+
+# Python tool cache (tools/wings)
+__pycache__/

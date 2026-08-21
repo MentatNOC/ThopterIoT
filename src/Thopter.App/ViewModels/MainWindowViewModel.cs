@@ -4,9 +4,11 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -38,6 +40,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly IFindingsSink _findingsSink = new NoOpFindingsSink();
 
     private CancellationTokenSource? _scanCts;
+
+    // Live NIC repopulation: OS network-change events arrive in bursts on pool threads
+    // (link up, then DHCP, then registration), so they restart this UI-thread debounce
+    // timer and the interface list settles once. Refreshes that land mid-scan are held
+    // until the scan finishes.
+    private DispatcherTimer? _nicDebounce;
+    private bool _nicRefreshPending;
 
     public ObservableCollection<DeviceRow> Devices { get; } = new();
 
@@ -88,6 +97,91 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         SelectedInterface = NetInfo.GetPrimaryInterface() ?? Interfaces.FirstOrDefault();
 
         Devices.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasResults));
+
+        // A NIC plugged in (or unplugged) after launch must show up on its own - walking
+        // up and jacking into the camera VLAN is the tool's core workflow. These are
+        // static events, so every subscriber is rooted until it unsubscribes: the window's
+        // Closed hook calls Dispose for the app, and design mode never subscribes at all
+        // (the previewer constructs a fresh VM per reload and never closes anything).
+        if (!Design.IsDesignMode)
+        {
+            NetworkChange.NetworkAddressChanged += OnNetworkChanged;
+            NetworkChange.NetworkAvailabilityChanged += OnNetworkAvailabilityChanged;
+        }
+    }
+
+    private void OnNetworkChanged(object? sender, EventArgs e) => ScheduleInterfaceRefresh();
+
+    private void OnNetworkAvailabilityChanged(object? sender, NetworkAvailabilityEventArgs e)
+        => ScheduleInterfaceRefresh();
+
+    private void ScheduleInterfaceRefresh()
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (_nicDebounce is null)
+            {
+                _nicDebounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(800) };
+                _nicDebounce.Tick += (_, _) =>
+                {
+                    _nicDebounce.Stop();
+                    if (IsScanning)
+                        _nicRefreshPending = true;
+                    else
+                        RefreshInterfaces();
+                };
+            }
+
+            // Restart on every event so one refresh runs after the burst goes quiet.
+            _nicDebounce.Stop();
+            _nicDebounce.Start();
+        });
+    }
+
+    /// <summary>
+    /// Re-enumerate active interfaces and reconcile the dropdown, keeping the user's
+    /// selection when that interface still exists (even if DHCP moved its address).
+    /// </summary>
+    private void RefreshInterfaces()
+    {
+        var previous = SelectedInterface;
+
+        Interfaces.Clear();
+        foreach (var nic in NetInfo.GetActiveIPv4Interfaces())
+            Interfaces.Add(nic);
+
+        SelectedInterface = PickInterfaceSelection(previous, NetInfo.GetPrimaryInterface(), Interfaces);
+    }
+
+    /// <summary>
+    /// Selection policy for a refreshed interface list: keep the current pick exactly,
+    /// else the same adapter on the same subnet (DHCP renewed the address), else the same
+    /// adapter at all, else the OS-primary interface, else the first entry. The same-subnet
+    /// tier matters because a multi-homed adapter yields one candidate per address; without
+    /// it a renewal could silently retarget the next scan at the adapter's other subnet.
+    /// Pure so it is unit-testable.
+    /// </summary>
+    public static NetworkInterfaceInfo? PickInterfaceSelection(
+        NetworkInterfaceInfo? current,
+        NetworkInterfaceInfo? primary,
+        IReadOnlyList<NetworkInterfaceInfo> candidates)
+    {
+        return Exact(current) ?? SameSubnet(current) ?? SameAdapter(current)
+               ?? Exact(primary) ?? candidates.FirstOrDefault();
+
+        NetworkInterfaceInfo? Exact(NetworkInterfaceInfo? nic) => nic is null
+            ? null
+            : candidates.FirstOrDefault(i => i.Id == nic.Id && i.HostAddress.Equals(nic.HostAddress));
+
+        NetworkInterfaceInfo? SameSubnet(NetworkInterfaceInfo? nic) => nic is null
+            ? null
+            : candidates.FirstOrDefault(i => i.Id == nic.Id
+                                             && i.PrefixLength == nic.PrefixLength
+                                             && i.NetworkAddress.Equals(nic.NetworkAddress));
+
+        NetworkInterfaceInfo? SameAdapter(NetworkInterfaceInfo? nic) => nic is null
+            ? null
+            : candidates.FirstOrDefault(i => i.Id == nic.Id);
     }
 
     [RelayCommand(CanExecute = nameof(CanScan))]
@@ -168,6 +262,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 foreach (var row in Devices)
                     row.ConsumeSpiceSweep();
             }, DispatcherPriority.Background);
+
+            // NIC changes that arrived mid-scan were held; reconcile the dropdown now.
+            if (_nicRefreshPending)
+            {
+                _nicRefreshPending = false;
+                RefreshInterfaces();
+            }
         }
     }
 
@@ -269,6 +370,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        NetworkChange.NetworkAddressChanged -= OnNetworkChanged;
+        NetworkChange.NetworkAvailabilityChanged -= OnNetworkAvailabilityChanged;
+        _nicDebounce?.Stop();
         _scanCts?.Cancel();
         _scanCts?.Dispose();
     }

@@ -13,6 +13,10 @@
     <!-- No admin: sockets + NIC enumeration + light identify need no elevation. -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
+    <!-- Wing-X brand icon: Explorer/shortcut icon baked into the exe; the window icon
+         loads the same file as an Avalonia resource. Regenerate via tools/wings. -->
+    <ApplicationIcon>Assets\thopter.ico</ApplicationIcon>
+
     <!-- NativeAOT hygiene (required, warnings-as-errors clean). TrimMode full is implied
          by PublishAot; InvariantGlobalization drops ICU for a smaller, simpler AOT build. -->
     <PublishAot>true</PublishAot>
@@ -32,6 +36,7 @@
     <AvaloniaResource Include="Assets\Fonts\MartianMono-Variable.ttf" />
     <!-- Scan-in-progress wing-flutter sprite frames (8-bit ornithopter wings). -->
     <AvaloniaResource Include="Assets\Wings\*.png" />
+    <AvaloniaResource Include="Assets\thopter.ico" />
   </ItemGroup>
 
   <ItemGroup>

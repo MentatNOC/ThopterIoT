@@ -9,10 +9,11 @@ using Avalonia.Threading;
 namespace Thopter.App.Controls;
 
 /// <summary>
-/// One-shot 8-bit "spice on the wind" effect for a device row: a gust of chunky rust and
-/// gold sand grains blows left to right across the row when the device is identified as a
-/// camera or recorder. Matches the WingFlutter pixel language: hard 2px squares on a 2px
-/// grid, small fixed palette, no alpha fades.
+/// One-shot 8-bit "spice on the wind" effect for a device row: two gusts of chunky rust
+/// and gold sand grains blow left to right across the row when the device is identified
+/// as a camera or recorder, an opener and then a heavier follow-up. Matches the
+/// WingFlutter pixel language: hard 2px squares on a 2px grid, small fixed palette, no
+/// alpha fades.
 ///
 /// Trigger is the row's <c>SpiceSweepPending</c> one-shot; this control consumes it when
 /// the sweep starts, so a recycled list container can't replay it. A row identified while
@@ -26,8 +27,12 @@ public sealed class SpiceSweep : Control
         AvaloniaProperty.Register<SpiceSweep, bool>(nameof(IsPending));
 
     private const int TickMs = 33;
-    private const int GrainCount = 46;
     private const double MaxDelaySeconds = 0.35;
+
+    // Two shots per identification: the opener, then a heavier follow-up gust.
+    private const int Shot1Grains = 72;
+    private const int Shot2Grains = 86;
+    private const double Shot2DelaySeconds = 2.5;
 
     // Spice palette, dark to glint; weighted toward the mid rusts. The umber reads on the
     // light theme, the gold glints read on the dark theme.
@@ -128,13 +133,23 @@ public sealed class SpiceSweep : Control
 
     private static Grain[] BuildGust()
     {
+        var first = BuildShot(Shot1Grains, 0.0);
+        var second = BuildShot(Shot2Grains, Shot2DelaySeconds);
+        var grains = new Grain[first.Length + second.Length];
+        first.CopyTo(grains, 0);
+        second.CopyTo(grains, first.Length);
+        return grains;
+    }
+
+    private static Grain[] BuildShot(int count, double delayOffset)
+    {
         var rng = Random.Shared;
-        var grains = new Grain[GrainCount];
-        for (int i = 0; i < GrainCount; i++)
+        var grains = new Grain[count];
+        for (int i = 0; i < count; i++)
         {
             grains[i] = new Grain
             {
-                Delay = rng.NextDouble() * MaxDelaySeconds,
+                Delay = delayOffset + rng.NextDouble() * MaxDelaySeconds,
                 CrossSeconds = 0.45 + rng.NextDouble() * 0.40,
                 BaseY = rng.NextDouble(),
                 Wobble = 1.0 + rng.NextDouble() * 2.0,
@@ -155,8 +170,8 @@ public sealed class SpiceSweep : Control
             return;
         }
 
-        // Every grain has exited once the slowest possible grain is done.
-        if (_clock.Elapsed.TotalSeconds > MaxDelaySeconds + 0.90)
+        // Every grain has exited once the slowest grain of the second shot is done.
+        if (_clock.Elapsed.TotalSeconds > Shot2DelaySeconds + MaxDelaySeconds + 0.90)
         {
             StopSweep();
             return;
