@@ -84,6 +84,11 @@ public sealed class DiscoveryEngine
         // subnet wider than the cap it would wrongly drop legitimate same-subnet hosts.
         var scopeSubnets = options.RestrictToTargetSubnets ? options.ResolveTargetSubnets() : null;
 
+        // Every mid-scan report goes out classified from the evidence gathered so far,
+        // so the UI shows "Camera" the moment the ONVIF reply lands instead of holding
+        // "Unknown" until the fusion pass at the very end of the pipeline.
+        var report = IdentifyingProgress.Wrap(progress);
+
         bool InScope(IPAddress ip)
         {
             if (scopeSubnets is null) return true;
@@ -109,7 +114,7 @@ public sealed class DiscoveryEngine
             ct.ThrowIfCancellationRequested();
             if (!InScope(ip)) continue; // other-segment neighbor
             var device = MergeArp(registry, ipIndex, ip, mac);
-            progress?.Report(device);
+            report?.Report(device);
         }
 
         overall.Report(StageAEnd);
@@ -146,7 +151,7 @@ public sealed class DiscoveryEngine
                 foreach (var finding in findings)
                 {
                     if (!InScope(finding.Address)) continue;
-                    ApplyFinding(MergeFinding(registry, ipIndex, finding), finding, progress);
+                    ApplyFinding(MergeFinding(registry, ipIndex, finding), finding, report);
                 }
         }
         overall.Report(StageBEnd);
@@ -169,25 +174,28 @@ public sealed class DiscoveryEngine
                     .ConfigureAwait(false);
 
                 foreach (var finding in portFindings)
-                    ApplyFinding(MergeFinding(registry, ipIndex, finding), finding, progress);
+                    ApplyFinding(MergeFinding(registry, ipIndex, finding), finding, report);
 
                 // The TCP connects just populated the OS neighbor table for on-segment hosts
                 // that were silent to ICMP (many cameras block ping). Recover their MAC + OUI.
-                BackfillMacsFromNeighborTable(registry, progress);
+                BackfillMacsFromNeighborTable(registry, report);
             }
         }
         overall.Report(StageCEnd);
 
         // --- Stage D: NetBIOS name query for hosts still unnamed by the protocol layer ---
         if (options.EnableNbns)
-            await ResolveNetbiosNamesAsync(registry, options.Nbns, progress, ct).ConfigureAwait(false);
+            await ResolveNetbiosNamesAsync(registry, options.Nbns, report, ct).ConfigureAwait(false);
         overall.Report(StageDEnd);
 
         // --- Fusion: offline device type + model ---
+        // This is the one pass allowed to enrich vendor from a web banner: the neighbor-table
+        // backfill above has now applied every recoverable OUI vendor, so the banner only
+        // fills a genuinely still-missing one and can't outrank the authoritative OUI.
         foreach (var device in registry.Values)
         {
             ct.ThrowIfCancellationRequested();
-            DeviceIdentifier.Identify(device);
+            DeviceIdentifier.Identify(device, enrichVendorFromBanner: true);
             progress?.Report(device);
         }
         overall.Report(1.0);

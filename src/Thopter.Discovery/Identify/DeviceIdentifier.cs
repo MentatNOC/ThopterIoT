@@ -45,7 +45,15 @@ public static class DeviceIdentifier
         ("wisenet", "Hanwha"), ("sunapi", "Hanwha"), ("hanwha", "Hanwha"),
     };
 
-    public static void Identify(DiscoveredDevice device)
+    /// <param name="enrichVendorFromBanner">
+    /// Allow a web-server banner to fill in a missing vendor. Only the end-of-scan fusion
+    /// pass may pass true: mid-scan calls run before the post-portscan neighbor-table
+    /// backfill has attached OUI vendors, and a banner guess taken then would permanently
+    /// outrank the authoritative OUI (both the backfill and the enricher defer to an
+    /// already-set vendor). It would also let one banner string count as two "independent"
+    /// camera signals, defeating the two-signal guardrail.
+    /// </param>
+    public static void Identify(DiscoveredDevice device, bool enrichVendorFromBanner = true)
     {
         // 1. Best model, by source precedence (most authoritative first).
         string? model = FirstAttribute(device,
@@ -53,7 +61,7 @@ public static class DeviceIdentifier
         if (model is not null) device.Model = model;
 
         // 1b. On a routed scan there's no OUI vendor - try to recover it from web-server banners.
-        EnrichVendorFromBanner(device);
+        if (enrichVendorFromBanner) EnrichVendorFromBanner(device);
 
         // 2. Gather independent signals.
         bool onvif = device.Sources.HasFlag(DiscoverySource.Onvif) || device.Attributes.ContainsKey("onvif.present");
