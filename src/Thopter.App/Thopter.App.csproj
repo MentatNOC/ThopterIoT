@@ -17,9 +17,12 @@
          loads the same file as an Avalonia resource. Regenerate via tools/wings. -->
     <ApplicationIcon>Assets\thopter.ico</ApplicationIcon>
 
-    <!-- NativeAOT hygiene (required, warnings-as-errors clean). TrimMode full is implied
-         by PublishAot; InvariantGlobalization drops ICU for a smaller, simpler AOT build. -->
-    <PublishAot>true</PublishAot>
+    <!-- Publish is single-file self-contained (see the RID-scoped group below), NOT NativeAOT.
+         AOT emits Skia/HarfBuzz/GL as loose native DLLs that a lone-exe download can't carry, so
+         the released exe crashed in SkiaPlatform.Initialize with no window; the self-extracting
+         single file embeds them instead. The AOT/trim/single-file analyzers stay on so the code
+         stays AOT-ready and returning to an AOT + zip release is a small change. InvariantGlobalization
+         drops ICU for a smaller build. -->
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <InvariantGlobalization>true</InvariantGlobalization>
     <IsAotCompatible>true</IsAotCompatible>
@@ -39,6 +42,16 @@
        Avalonia supports NativeAOT with compiled bindings, which this project mandates. -->
   <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
     <NoWarn>$(NoWarn);IL2026;IL2104;IL3053</NoWarn>
+
+    <!-- One self-contained file that runs with no install and no .NET runtime on the box. The
+         native libs (libSkiaSharp, libHarfBuzzSharp, av_libglesv2) are embedded and self-extract
+         on first run; without IncludeNativeLibrariesForSelfExtract they ship loose and the lone
+         exe breaks exactly as the first release did. Untrimmed, so no Avalonia XAML/reflection
+         path is stripped; compression keeps the single file's download size down. -->
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
 
   <ItemGroup>
